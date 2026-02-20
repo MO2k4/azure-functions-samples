@@ -6,5 +6,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <!-- CA1873: log-call boxing is expected in sample code — [LoggerMessage] would obscure the examples -->
+    <NoWarn>$(NoWarn);CA1873</NoWarn>
   </PropertyGroup>
 </Project>

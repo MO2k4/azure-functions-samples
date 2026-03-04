@@ -12,7 +12,7 @@ public class OrderFunction(ILogger<OrderFunction> logger)
 {
     [Function("CreateOrder")]
     public IActionResult CreateOrder(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "orders")] HttpRequest req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "orders")] HttpRequest req,
         [FromBody] CreateOrderRequest order)
     {
         logger.LogInformation("Order for {ProductId} x{Quantity}", order.ProductId, order.Quantity);

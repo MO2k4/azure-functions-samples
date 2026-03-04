@@ -9,7 +9,7 @@ public class HelloFunction(ILogger<HelloFunction> logger)
 {
     [Function("Hello")]
     public IActionResult Run(
-        [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req)
     {
         logger.LogInformation("Hello function triggered");
 

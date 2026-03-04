@@ -9,7 +9,7 @@ public class ProductFunction(ILogger<ProductFunction> logger)
 {
     [Function("GetProduct")]
     public IActionResult GetProduct(
-        [HttpTrigger(AuthorizationLevel.Function, "get",
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get",
             Route = "products/{category:alpha}/{id:int?}")] HttpRequest req,
         string category, int? id)
     {

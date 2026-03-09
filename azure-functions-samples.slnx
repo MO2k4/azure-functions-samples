@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="HttpTriggerDemo/HttpTriggerDemo.csproj" />
   <Project Path="TriggerDemo/TriggerDemo.csproj" />
+  <Project Path="ConfigurationDemo/ConfigurationDemo.csproj" />
   <Project Path="HttpTriggerDemo.Tests/HttpTriggerDemo.Tests.csproj" />
 </Solution>

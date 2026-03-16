@@ -1,36 +1,43 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 
 namespace HttpTriggerDemo.Tests;
 
 public class OrderFunctionTests
 {
-    private readonly OrderFunction _function =
-        new(NullLogger<OrderFunction>.Instance);
+    private readonly IOrderService _orderService = Substitute.For<IOrderService>();
+    private readonly OrderFunction _function;
 
-    [Fact]
-    public void CreateOrder_WithValidOrder_Returns201Created()
+    public OrderFunctionTests()
     {
-        var context = new DefaultHttpContext();
-        var order = new CreateOrderRequest("WIDGET-42", 3);
-
-        var result = _function.CreateOrder(context.Request, order);
-
-        var created = Assert.IsType<CreatedResult>(result);
-        Assert.NotNull(created.Location);
-        Assert.StartsWith("/orders/", created.Location);
+        _function = new OrderFunction(_orderService);
     }
 
     [Fact]
-    public void CreateOrder_EchoesOrderInResponseBody()
+    public async Task CreateOrder_WhenServiceSucceeds_Returns201Created()
     {
-        var context = new DefaultHttpContext();
-        var order = new CreateOrderRequest("GADGET-7", 1);
+        var request = new CreateOrderRequest("WIDGET-42", 3);
+        var order = new Order("ORD-ABCD1234", "WIDGET-42", 3);
+        _orderService.CreateOrderAsync(request).Returns(OrderResult.Success(order));
 
-        var result = _function.CreateOrder(context.Request, order);
+        var result = await _function.CreateOrder(new DefaultHttpContext().Request, request);
 
         var created = Assert.IsType<CreatedResult>(result);
+        Assert.Equal("/orders/ORD-ABCD1234", created.Location);
         Assert.Equal(order, created.Value);
+    }
+
+    [Fact]
+    public async Task CreateOrder_WhenServiceFails_Returns400BadRequest()
+    {
+        var request = new CreateOrderRequest("WIDGET-42", -1);
+        _orderService.CreateOrderAsync(request)
+            .Returns(OrderResult.Failure("Quantity must be greater than zero"));
+
+        var result = await _function.CreateOrder(new DefaultHttpContext().Request, request);
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("Quantity must be greater than zero", bad.Value);
     }
 }

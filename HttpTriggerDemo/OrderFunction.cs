@@ -1,21 +1,24 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 using FromBodyAttribute = Microsoft.Azure.Functions.Worker.Http.FromBodyAttribute;
 
 namespace HttpTriggerDemo;
 
 public record CreateOrderRequest(string ProductId, int Quantity);
 
-public class OrderFunction(ILogger<OrderFunction> logger)
+public class OrderFunction(IOrderService orderService)
 {
     [Function("CreateOrder")]
-    public IActionResult CreateOrder(
+    public async Task<IActionResult> CreateOrder(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "orders")] HttpRequest req,
         [FromBody] CreateOrderRequest order)
     {
-        logger.LogInformation("Order for {ProductId} x{Quantity}", order.ProductId, order.Quantity);
-        return new CreatedResult($"/orders/{Guid.NewGuid()}", order);
+        var result = await orderService.CreateOrderAsync(order);
+
+        if (!result.IsSuccess)
+            return new BadRequestObjectResult(result.Error);
+
+        return new CreatedResult($"/orders/{result.Order!.OrderId}", result.Order);
     }
 }

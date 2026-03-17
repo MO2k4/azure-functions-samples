@@ -1,4 +1,6 @@
+using DotNet.Testcontainers.Builders;
 using Microsoft.Azure.Cosmos;
+using System.Net.Http;
 using Testcontainers.CosmosDb;
 
 namespace EventHubDemo.Tests;
@@ -7,6 +9,8 @@ public class CosmosSensorRepositoryTests : IAsyncLifetime
 {
     private readonly CosmosDbContainer _cosmos = new CosmosDbBuilder()
         .WithImage("mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview")
+        .WithWaitStrategy(Wait.ForUnixContainer()
+            .UntilMessageIsLogged("Gateway=OK, Explorer=OK"))
         .Build();
 
     private CosmosClient _client = null!;
@@ -16,12 +20,14 @@ public class CosmosSensorRepositoryTests : IAsyncLifetime
     {
         await _cosmos.StartAsync();
 
+        var mappedPort = _cosmos.GetMappedPublicPort(8081);
+
         _client = new CosmosClient(
             _cosmos.GetConnectionString(),
             new CosmosClientOptions
             {
                 ConnectionMode = ConnectionMode.Gateway,
-                HttpClientFactory = () => _cosmos.HttpClient,
+                HttpClientFactory = () => new HttpClient(new CosmosEmulatorHandler(mappedPort)),
                 SerializerOptions = new CosmosSerializationOptions
                 {
                     PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase

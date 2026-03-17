@@ -23,7 +23,4 @@
   <ItemGroup>
     <ProjectReference Include="../EventHubDemo/EventHubDemo.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="eventhubs-config.json" />
-  </ItemGroup>
 </Project>

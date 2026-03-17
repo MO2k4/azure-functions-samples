@@ -3,4 +3,6 @@
   <Project Path="TriggerDemo/TriggerDemo.csproj" />
   <Project Path="ConfigurationDemo/ConfigurationDemo.csproj" />
   <Project Path="HttpTriggerDemo.Tests/HttpTriggerDemo.Tests.csproj" />
+  <Project Path="EventHubDemo/EventHubDemo.csproj" />
+  <Project Path="EventHubDemo.Tests/EventHubDemo.Tests.csproj" />
 </Solution>

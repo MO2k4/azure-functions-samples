@@ -11,7 +11,14 @@ var cosmosConnectionString = builder.Configuration["CosmosDbConnection"]
 
 builder.Services.AddSingleton(_ => new CosmosClient(
     cosmosConnectionString,
-    new CosmosClientOptions { ConnectionMode = ConnectionMode.Gateway }));
+    new CosmosClientOptions
+    {
+        ConnectionMode = ConnectionMode.Gateway,
+        SerializerOptions = new CosmosSerializationOptions
+        {
+            PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
+        }
+    }));
 
 builder.Services.AddScoped<ICosmosRepository, CosmosSensorRepository>();
 builder.Services.AddScoped<ISensorProcessor, SensorProcessorService>();

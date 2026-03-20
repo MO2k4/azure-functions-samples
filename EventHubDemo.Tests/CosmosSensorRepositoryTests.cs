@@ -49,7 +49,7 @@ public class CosmosSensorRepositoryTests : IAsyncLifetime
 
         var query = _container.GetItemQueryIterator<dynamic>(
             "SELECT * FROM c WHERE c.deviceId = 'device-01'");
-        var results = new List<dynamic>();
+        List<dynamic> results = [];
         while (query.HasMoreResults)
         {
             var page = await query.ReadNextAsync();

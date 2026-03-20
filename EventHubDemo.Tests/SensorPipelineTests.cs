@@ -69,7 +69,7 @@ public class SensorPipelineTests(SensorPipelineFixture fixture)
         var query = container.GetItemQueryIterator<dynamic>(
             $"SELECT * FROM c WHERE c.deviceId = '{reading.DeviceId}'");
 
-        var results = new List<dynamic>();
+        List<dynamic> results = [];
         while (query.HasMoreResults)
         {
             var page = await query.ReadNextAsync();

@@ -39,7 +39,7 @@ public sealed class SensorPipelineFixture : IAsyncLifetime
         _eventHubs = new EventHubsBuilder()
             .WithAcceptLicenseAgreement(true)
             .WithConfigurationBuilder(EventHubsServiceConfiguration.Create()
-                .WithEntity("sensor-readings", 2, Array.Empty<string>()))
+                .WithEntity("sensor-readings", 2, []))
             .WithWaitStrategy(Wait.ForUnixContainer()
                 .UntilMessageIsLogged("Emulator Service is Successfully Up!"))
             .Build();

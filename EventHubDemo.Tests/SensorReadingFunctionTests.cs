@@ -19,7 +19,7 @@ public class SensorReadingFunctionTests
     public async Task Run_WithSingleEvent_CallsProcessorOnce()
     {
         var reading = new SensorReading("device-01", 22.5, 60.0, DateTimeOffset.UtcNow);
-        var events = new[] { CreateEventData(reading) };
+        EventData[] events = [CreateEventData(reading)];
 
         await _function.Run(events);
 
@@ -32,12 +32,12 @@ public class SensorReadingFunctionTests
     [Fact]
     public async Task Run_WithBatchOfThreeEvents_CallsProcessorThreeTimes()
     {
-        var events = new[]
-        {
+        EventData[] events =
+        [
             CreateEventData(new SensorReading("device-01", 22.5, 60.0, DateTimeOffset.UtcNow)),
             CreateEventData(new SensorReading("device-02", 25.0, 55.0, DateTimeOffset.UtcNow)),
             CreateEventData(new SensorReading("device-03", 18.3, 72.0, DateTimeOffset.UtcNow)),
-        };
+        ];
 
         await _function.Run(events);
 

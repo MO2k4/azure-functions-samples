@@ -8,5 +8,6 @@
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <!-- CA1848/CA1873: direct logger calls are expected in sample code — [LoggerMessage] would obscure the examples -->
     <NoWarn>$(NoWarn);CA1848;CA1873</NoWarn>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 </Project>

@@ -1,4 +1,5 @@
 using Azure.Messaging.EventHubs;
+using EventHubDemo.Logging;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -14,16 +15,26 @@ public class SensorReadingFunction(
         [EventHubTrigger("sensor-readings", Connection = "EventHubConnection")]
         EventData[] events)
     {
-        logger.LogInformation("Processing batch of {Count} events", events.Length);
+        using var batchScope = logger.BeginScope(new Dictionary<string, object>
+        {
+            ["BatchSize"] = events.Length
+        });
+
+        SensorLogs.BatchReceived(logger, events.Length);
 
         foreach (var eventData in events)
         {
             var reading = JsonSerializer.Deserialize<SensorReading>(eventData.Body.Span);
             if (reading is null)
             {
-                logger.LogWarning("Received null or unparseable event — skipping");
+                SensorLogs.InvalidEventSkipped(logger);
                 continue;
             }
+
+            using var eventScope = logger.BeginScope(new Dictionary<string, object>
+            {
+                ["DeviceId"] = reading.DeviceId
+            });
 
             await processor.ProcessAsync(reading);
         }

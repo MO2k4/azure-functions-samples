@@ -32,7 +32,7 @@
 
     <!-- Monitoring: EventHubDemo (OpenTelemetry) -->
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.OpenTelemetry" Version="1.1.0" />
-    <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.3.0" />
+    <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.7.0" />
   </ItemGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.Azure.Functions.Worker" Version="2.51.0" />

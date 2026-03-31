@@ -1,3 +1,4 @@
+using HttpTriggerDemo.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace HttpTriggerDemo;
@@ -25,7 +26,10 @@ public class OrderService(ILogger<OrderService> logger, IOrderRepository reposit
     public async Task<OrderResult> CreateOrderAsync(CreateOrderRequest request)
     {
         if (request.Quantity <= 0)
+        {
+            OrderLogs.OrderValidationFailed(logger, "Quantity must be greater than zero");
             return OrderResult.Failure("Quantity must be greater than zero");
+        }
 
         var order = new Order(
             OrderId: "ORD-" + Guid.NewGuid().ToString("N")[..8],
@@ -33,8 +37,9 @@ public class OrderService(ILogger<OrderService> logger, IOrderRepository reposit
             Quantity: request.Quantity);
 
         await repository.SaveAsync(order);
+        OrderLogs.OrderSaved(logger);
 
-        logger.LogInformation("Created order {OrderId} for {ProductId}", order.OrderId, order.ProductId);
+        OrderLogs.OrderCreated(logger, order.OrderId, order.ProductId);
 
         return OrderResult.Success(order);
     }

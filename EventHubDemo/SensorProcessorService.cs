@@ -1,3 +1,4 @@
+using EventHubDemo.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace EventHubDemo;
@@ -15,24 +16,18 @@ public class SensorProcessorService(
     {
         if (reading.Temperature < MinTemperature || reading.Temperature > MaxTemperature)
         {
-            logger.LogWarning(
-                "Reading from {DeviceId} has out-of-range temperature {Temperature}°C — skipping",
-                reading.DeviceId, reading.Temperature);
+            SensorLogs.TemperatureOutOfRange(logger, reading.Temperature);
             return;
         }
 
         if (reading.Humidity < MinHumidity || reading.Humidity > MaxHumidity)
         {
-            logger.LogWarning(
-                "Reading from {DeviceId} has out-of-range humidity {Humidity}% — skipping",
-                reading.DeviceId, reading.Humidity);
+            SensorLogs.HumidityOutOfRange(logger, reading.Humidity);
             return;
         }
 
         await repository.SaveAsync(reading);
 
-        logger.LogInformation(
-            "Saved reading from {DeviceId}: {Temperature}°C, {Humidity}%",
-            reading.DeviceId, reading.Temperature, reading.Humidity);
+        SensorLogs.ReadingSaved(logger, reading.Temperature, reading.Humidity);
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace HttpTriggerDemo.Tests;
@@ -11,7 +12,7 @@ public class OrderFunctionTests
 
     public OrderFunctionTests()
     {
-        _function = new OrderFunction(_orderService);
+        _function = new OrderFunction(_orderService, Substitute.For<ILogger<OrderFunction>>());
     }
 
     [Fact]

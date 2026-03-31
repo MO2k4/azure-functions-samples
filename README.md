@@ -4,10 +4,14 @@ Companion code for the **Azure Functions for .NET Developers** series on dev.to.
 
 ## Projects
 
-| Project | Article |
-|---------|---------|
-| [HttpTriggerDemo](./HttpTriggerDemo) | [Your First Azure Function: HTTP Triggers Step-by-Step](https://dev.to/martin_oehlert/your-first-azure-function-http-triggers-step-by-step-ib8) |
-| [TriggerDemo](./TriggerDemo) | [Beyond HTTP: Timer, Queue, and Blob Triggers](https://dev.to/martin_oehlert/beyond-http-timer-queue-and-blob-triggers) |
+| Project | Article | Monitoring |
+|---------|---------|------------|
+| [HttpTriggerDemo](./HttpTriggerDemo) | [Your First Azure Function: HTTP Triggers Step-by-Step](https://dev.to/martin_oehlert/your-first-azure-function-http-triggers-step-by-step-ib8) | Classic Application Insights SDK |
+| [TriggerDemo](./TriggerDemo) | [Beyond HTTP: Timer, Queue, and Blob Triggers](https://dev.to/martin_oehlert/beyond-http-timer-queue-and-blob-triggers) | -- |
+| [ConfigurationDemo](./ConfigurationDemo) | Configuration Done Right (Part 6) | -- |
+| [EventHubDemo](./EventHubDemo) | Event Hub Processing (Part 4+) | OpenTelemetry + Azure Monitor |
+
+HttpTriggerDemo and EventHubDemo demonstrate the two monitoring approaches from [Part 9: Monitoring and Troubleshooting](https://dev.to/martin_oehlert/monitoring-and-troubleshooting-application-insights-basics).
 
 ## Prerequisites
 

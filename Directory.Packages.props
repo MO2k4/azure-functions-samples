@@ -25,6 +25,16 @@
     <PackageVersion Include="Azure.Messaging.EventHubs" Version="5.12.2" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Monitoring: HttpTriggerDemo (Classic App Insights) -->
+    <!-- Do NOT upgrade WorkerService to 3.x: breaks Functions worker. See github.com/Azure/azure-functions-dotnet-worker/issues/3322 -->
+    <PackageVersion Include="Microsoft.ApplicationInsights.WorkerService" Version="2.22.0" />
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.ApplicationInsights" Version="2.0.0" />
+
+    <!-- Monitoring: EventHubDemo (OpenTelemetry) -->
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.OpenTelemetry" Version="1.0.0" />
+    <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.3.0" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageVersion Include="Microsoft.Azure.Functions.Worker" Version="2.51.0" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Sdk" Version="2.0.7" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" Version="2.1.0" />

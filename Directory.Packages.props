@@ -31,7 +31,7 @@
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.ApplicationInsights" Version="2.0.0" />
 
     <!-- Monitoring: EventHubDemo (OpenTelemetry) -->
-    <PackageVersion Include="Microsoft.Azure.Functions.Worker.OpenTelemetry" Version="1.0.0" />
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.OpenTelemetry" Version="1.1.0" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.3.0" />
   </ItemGroup>
   <ItemGroup>

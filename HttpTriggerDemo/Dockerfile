@@ -8,6 +8,17 @@ RUN dotnet restore HttpTriggerDemo/HttpTriggerDemo.csproj
 COPY HttpTriggerDemo/ HttpTriggerDemo/
 RUN dotnet publish HttpTriggerDemo/HttpTriggerDemo.csproj -c Release -o /app/publish
 
+# Debug stage — includes SDK, debugger, and source for attach debugging
+FROM build AS debug
+RUN dotnet tool install --tool-path /tools dotnet-dump
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl unzip procps \
+    && curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+ENV DOTNET_USE_POLLING_FILE_WATCHER=1
+ENTRYPOINT ["dotnet", "run", "--project", "/src/HttpTriggerDemo"]
+
 # Runtime stage
 FROM --platform=linux/amd64 mcr.microsoft.com/azure-functions/dotnet-isolated:4-dotnet-isolated10.0 AS runtime
 ENV AzureWebJobsScriptRoot=/home/site/wwwroot \

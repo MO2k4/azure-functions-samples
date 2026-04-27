@@ -5,4 +5,5 @@
   <Project Path="HttpTriggerDemo.Tests/HttpTriggerDemo.Tests.csproj" />
   <Project Path="EventHubDemo/EventHubDemo.csproj" />
   <Project Path="EventHubDemo.Tests/EventHubDemo.Tests.csproj" />
+  <Project Path="ScalingDemo/ScalingDemo.csproj" />
 </Solution>

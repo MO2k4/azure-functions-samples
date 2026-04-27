@@ -22,7 +22,5 @@ ENTRYPOINT ["dotnet", "run", "--project", "/src/HttpTriggerDemo"]
 # Runtime stage
 FROM --platform=linux/amd64 mcr.microsoft.com/azure-functions/dotnet-isolated:4-dotnet-isolated10.0 AS runtime
 ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
-    AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
-    AZURE_FUNCTIONS_ENVIRONMENT=Development \
-    AzureWebJobsStorage=""
+    AzureFunctionsJobHost__Logging__Console__IsEnabled=true
 COPY --from=build /app/publish /home/site/wwwroot

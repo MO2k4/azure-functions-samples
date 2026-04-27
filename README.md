@@ -13,6 +13,23 @@ Companion code for the **Azure Functions for .NET Developers** series on dev.to.
 
 HttpTriggerDemo and EventHubDemo demonstrate the two monitoring approaches from [Part 9: Monitoring and Troubleshooting](https://dev.to/martin_oehlert/monitoring-and-troubleshooting-application-insights-basics).
 
+## Running with Docker
+
+The HttpTriggerDemo includes a multi-stage Dockerfile and a Compose file with Azurite for local development. See the companion articles for details:
+
+- [Running Azure Functions in Docker: Why and How](https://dev.to/martin_oehlert/running-azure-functions-in-docker-why-and-how-1hal) (Dockerfile, Compose, deployment options)
+- Docker Pitfalls I Hit (And How to Avoid Them) (environment variables, Azurite networking, debugging, image size)
+
+```bash
+docker compose up --build
+```
+
+The function app starts on `http://localhost:8080`. For debug-attach workflows:
+
+```bash
+docker compose --profile debug up
+```
+
 ## Prerequisites
 
 - [.NET 10 SDK](https://dot.net/download) (LTS)

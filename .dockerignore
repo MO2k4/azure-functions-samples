@@ -1,0 +1,13 @@
+bin/
+obj/
+.git/
+.vs/
+.vscode/
+local.settings.json
+node_modules/
+*.user
+Dockerfile
+*.md
+.github/
+docs/
+**/*.Tests/

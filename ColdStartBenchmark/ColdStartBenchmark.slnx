@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Functions05/Functions05.csproj" />
+  <Project Path="Functions15/Functions15.csproj" />
+  <Project Path="Functions30/Functions30.csproj" />
+</Solution>

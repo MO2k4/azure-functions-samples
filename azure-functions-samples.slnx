@@ -6,4 +6,7 @@
   <Project Path="EventHubDemo/EventHubDemo.csproj" />
   <Project Path="EventHubDemo.Tests/EventHubDemo.Tests.csproj" />
   <Project Path="ScalingDemo/ScalingDemo.csproj" />
+  <Project Path="ProjectOrganizationDemo/OrderProcessor.Core/OrderProcessor.Core.csproj" />
+  <Project Path="ProjectOrganizationDemo/OrderProcessor.Http/OrderProcessor.Http.csproj" />
+  <Project Path="ProjectOrganizationDemo/OrderProcessor.Queue/OrderProcessor.Queue.csproj" />
 </Solution>

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>OrderProcessor.Core</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <!--
+      Pure shared library: no Microsoft.Azure.Functions.Worker.* references.
+      Only abstractions, so non-Functions consumers (ASP.NET Core, console, tests) can use it.
+    -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+</Project>

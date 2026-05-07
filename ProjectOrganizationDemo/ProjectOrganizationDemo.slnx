@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="OrderProcessor.Core/OrderProcessor.Core.csproj" />
+  <Project Path="OrderProcessor.Http/OrderProcessor.Http.csproj" />
+  <Project Path="OrderProcessor.Queue/OrderProcessor.Queue.csproj" />
+</Solution>

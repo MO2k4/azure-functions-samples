@@ -11,5 +11,7 @@
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.OpenTelemetry" />
     <PackageReference Include="Azure.Monitor.OpenTelemetry.Exporter" />
+    <!-- Explicit pin to override transitive 1.15.1 (GHSA-g94r-2vxg-569j) -->
+    <PackageReference Include="OpenTelemetry.Api" />
   </ItemGroup>
 </Project>

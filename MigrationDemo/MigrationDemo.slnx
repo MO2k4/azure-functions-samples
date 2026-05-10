@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Settlement.Core/Settlement.Core.csproj" />
+  <Project Path="Settlement.FunctionApp/Settlement.FunctionApp.csproj" />
+  <Project Path="Settlement.AppService/Settlement.AppService.csproj" />
+  <Project Path="Settlement.ContainerApp/Settlement.ContainerApp.csproj" />
+</Solution>

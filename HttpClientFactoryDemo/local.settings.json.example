@@ -1,0 +1,9 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "Payments__BaseAddress": "https://payments.example.com/",
+    "Payments__TimeoutSeconds": "10"
+  }
+}

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Settlement.Core</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <!--
+      Pure shared library: no host-specific (Functions / ASP.NET Core / Worker) references.
+      The same DLL is consumed by all three MigrationDemo hosts so the only thing that
+      changes between them is the hosting wrapper.
+    -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+</Project>

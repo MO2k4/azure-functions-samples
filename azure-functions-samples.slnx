@@ -6,7 +6,13 @@
   <Project Path="EventHubDemo/EventHubDemo.csproj" />
   <Project Path="EventHubDemo.Tests/EventHubDemo.Tests.csproj" />
   <Project Path="ScalingDemo/ScalingDemo.csproj" />
+  <Project Path="BatchCheckpointDemo/BatchCheckpointDemo.csproj" />
+  <Project Path="HttpClientFactoryDemo/HttpClientFactoryDemo.csproj" />
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Core/OrderProcessor.Core.csproj" />
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Http/OrderProcessor.Http.csproj" />
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Queue/OrderProcessor.Queue.csproj" />
+  <Project Path="MigrationDemo/Settlement.Core/Settlement.Core.csproj" />
+  <Project Path="MigrationDemo/Settlement.FunctionApp/Settlement.FunctionApp.csproj" />
+  <Project Path="MigrationDemo/Settlement.AppService/Settlement.AppService.csproj" />
+  <Project Path="MigrationDemo/Settlement.ContainerApp/Settlement.ContainerApp.csproj" />
 </Solution>

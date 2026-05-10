@@ -33,6 +33,8 @@
     <!-- Monitoring: EventHubDemo (OpenTelemetry) -->
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.OpenTelemetry" Version="1.1.0" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.7.0" />
+    <!-- Pin transitive OpenTelemetry.Api to patch GHSA-g94r-2vxg-569j (affects <1.15.3) -->
+    <PackageVersion Include="OpenTelemetry.Api" Version="1.15.3" />
   </ItemGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.Azure.Functions.Worker" Version="2.51.0" />
@@ -42,11 +44,15 @@
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.Storage.Queues" Version="5.5.3" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.Storage.Blobs" Version="6.8.0" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.Warmup" Version="4.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.0.0" />
   </ItemGroup>
   <ItemGroup>
     <!-- ProjectOrganizationDemo: OrderProcessor.Core abstractions-only references -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.0" />
+    <PackageVersion Include="Azure.Storage.Queues" Version="12.20.1" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
   </ItemGroup>
 </Project>

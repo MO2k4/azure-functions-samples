@@ -53,6 +53,8 @@
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.0" />
     <PackageVersion Include="Azure.Storage.Queues" Version="12.20.1" />
+    <PackageVersion Include="Azure.Identity" Version="1.21.0" />
+    <PackageVersion Include="Microsoft.Extensions.Azure" Version="1.14.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
   </ItemGroup>
 </Project>

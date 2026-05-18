@@ -1,12 +1,17 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Settlement.Core.Configuration;
 using Settlement.Core.Models;
 
 namespace Settlement.Core.Services;
 
 public sealed class PaymentSettler(
     ISettlementGateway gateway,
+    IOptions<PaymentSettlerOptions> options,
     ILogger<PaymentSettler> logger) : IPaymentSettler
 {
+    private readonly PaymentSettlerOptions _options = options.Value;
+
     public async Task<SettlementProgress> SettleAsync(
         SettlementBatch batch,
         IProgress<SettlementProgress>? progress,
@@ -15,6 +20,8 @@ public sealed class PaymentSettler(
         var settled = 0;
         var failed = 0;
         var total = batch.Payments.Count;
+        var processed = 0;
+        var interval = _options.ProgressReportInterval;
 
         logger.LogInformation(
             "Settling batch {BatchId}: total={Total}, cutoff={CutoffUtc:O}",
@@ -38,7 +45,11 @@ public sealed class PaymentSettler(
                     payment.PaymentId, response.ReasonCode);
             }
 
-            progress?.Report(new SettlementProgress(settled, failed, total));
+            processed++;
+            if (processed % interval == 0 || processed == total)
+            {
+                progress?.Report(new SettlementProgress(settled, failed, total));
+            }
         }
 
         var final = new SettlementProgress(settled, failed, total);

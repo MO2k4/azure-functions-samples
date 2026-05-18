@@ -6,8 +6,12 @@ public sealed class QueueOptions
 {
     public const string SectionName = "Queue";
 
-    [Required]
-    public string ConnectionString { get; init; } = string.Empty;
+    // Exactly one of ConnectionString (local / Azurite) or ServiceUri (managed
+    // identity / DefaultAzureCredential) must be set. Validated at registration
+    // time in Program.cs since data annotations can't express "one of".
+    public string? ConnectionString { get; init; }
+
+    public string? ServiceUri { get; init; }
 
     [Required]
     public string QueueName { get; init; } = "settlement-batches";

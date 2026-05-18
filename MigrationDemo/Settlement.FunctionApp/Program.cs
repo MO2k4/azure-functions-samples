@@ -13,6 +13,12 @@ builder.Services
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+builder.Services
+    .AddOptions<PaymentSettlerOptions>()
+    .Bind(builder.Configuration.GetSection(PaymentSettlerOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddSingleton<ISettlementGateway, FakeSettlementGateway>();
 builder.Services.AddSettlementCore();
 

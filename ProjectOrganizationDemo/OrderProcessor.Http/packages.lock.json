@@ -147,7 +147,6 @@
       "orderprocessor.core": {
         "type": "Project"
       }
-    },
-    "net10.0/linux-x64": {}
+    }
   }
 }

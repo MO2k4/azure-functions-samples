@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="../ProjectOrganizationDemo/OrderProcessor.Core/OrderProcessor.Core.csproj" />
+  <Project Path="../ProjectOrganizationDemo/OrderProcessor.Http/OrderProcessor.Http.csproj" />
+  <Project Path="../ProjectOrganizationDemo/OrderProcessor.Queue/OrderProcessor.Queue.csproj" />
+  <Project Path="AspireDemo.AppHost/AspireDemo.AppHost.csproj" />
+</Solution>

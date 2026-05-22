@@ -1,0 +1,18 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.3.5">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <UserSecretsId>aspiredemo-apphost-w22</UserSecretsId>
+    <IsAspireHost>true</IsAspireHost>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Azure.Functions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\ProjectOrganizationDemo\OrderProcessor.Http\OrderProcessor.Http.csproj" />
+    <ProjectReference Include="..\..\ProjectOrganizationDemo\OrderProcessor.Queue\OrderProcessor.Queue.csproj" />
+  </ItemGroup>
+
+</Project>

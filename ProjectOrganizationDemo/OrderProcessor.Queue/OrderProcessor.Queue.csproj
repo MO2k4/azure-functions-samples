@@ -3,8 +3,8 @@
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
     <OutputType>Exe</OutputType>
     <RootNamespace>OrderProcessor.Queue</RootNamespace>
-    <PublishReadyToRun>true</PublishReadyToRun>
-    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    <PublishReadyToRun Condition="'$(Configuration)' == 'Release'">true</PublishReadyToRun>
+    <RuntimeIdentifier Condition="'$(Configuration)' == 'Release'">linux-x64</RuntimeIdentifier>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Functions.Worker" />

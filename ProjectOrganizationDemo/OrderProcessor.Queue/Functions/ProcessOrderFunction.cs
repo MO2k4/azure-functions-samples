@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using OrderProcessor.Core.Models;
 using OrderProcessor.Core.Stores;
 using OrderProcessor.Core.Validators;
-using OrderProcessor.Queue.Models;
 
 namespace OrderProcessor.Queue.Functions;
 

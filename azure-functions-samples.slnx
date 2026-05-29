@@ -11,6 +11,8 @@
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Core/OrderProcessor.Core.csproj" />
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Http/OrderProcessor.Http.csproj" />
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Queue/OrderProcessor.Queue.csproj" />
+  <Project Path="AspireDemo/AspireDemo.AppHost/AspireDemo.AppHost.csproj" />
+  <Project Path="AspireDemo/AspireDemo.ServiceDefaults/AspireDemo.ServiceDefaults.csproj" />
   <Project Path="MigrationDemo/Settlement.Core/Settlement.Core.csproj" />
   <Project Path="MigrationDemo/Settlement.FunctionApp/Settlement.FunctionApp.csproj" />
   <Project Path="MigrationDemo/Settlement.AppService/Settlement.AppService.csproj" />

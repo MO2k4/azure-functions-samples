@@ -43,6 +43,7 @@
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.Timer" Version="4.3.1" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.Storage.Queues" Version="5.5.3" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.Storage.Blobs" Version="6.8.0" />
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.ServiceBus" Version="5.24.0" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.Warmup" Version="4.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.5.0" />
   </ItemGroup>
@@ -60,6 +61,12 @@
   <ItemGroup>
     <!-- AspireDemo: AppHost orchestrating the ProjectOrganizationDemo Functions apps -->
     <PackageVersion Include="Aspire.Hosting.Azure.Functions" Version="13.3.5" />
+    <!-- W23 Part 2: Azure services as Aspire resources (pin to the same 13.x train as the AppHost SDK) -->
+    <PackageVersion Include="Aspire.Hosting.Azure.ServiceBus" Version="13.3.5" />
+    <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.3.5" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.3.5" />
+    <!-- AspireDemo: OrderProcessor.ServiceBus injects IConnectionMultiplexer via AddRedisClient -->
+    <PackageVersion Include="Aspire.StackExchange.Redis" Version="13.3.5" />
 
     <!-- AspireDemo.ServiceDefaults: OpenTelemetry + resilience wiring the Functions workers call via AddServiceDefaults() -->
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.5.0" />

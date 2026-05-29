@@ -78,17 +78,6 @@
           "System.Memory.Data": "6.0.0"
         }
       },
-      "Azure.Identity": {
-        "type": "Transitive",
-        "resolved": "1.12.0",
-        "contentHash": "OBIM3aPz8n9oEO5fdnee+Vsc5Nl4W3FeslPpESyDiyByntQI5BAa76KD60eFXm9ulevnwxGZP9YXL8Y+paI5Uw==",
-        "dependencies": {
-          "Azure.Core": "1.40.0",
-          "Microsoft.Identity.Client": "4.61.3",
-          "Microsoft.Identity.Client.Extensions.Msal": "4.61.3",
-          "System.Security.Cryptography.ProtectedData": "4.7.0"
-        }
-      },
       "BouncyCastle.Cryptography": {
         "type": "Transitive",
         "resolved": "2.4.0",
@@ -430,6 +419,18 @@
           "Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore": "[2.1.0, )",
           "Microsoft.Azure.Functions.Worker.Extensions.Timer": "[4.3.1, )",
           "Microsoft.Azure.Functions.Worker.Sdk": "[2.0.7, )"
+        }
+      },
+      "Azure.Identity": {
+        "type": "CentralTransitive",
+        "requested": "[1.21.0, )",
+        "resolved": "1.12.0",
+        "contentHash": "OBIM3aPz8n9oEO5fdnee+Vsc5Nl4W3FeslPpESyDiyByntQI5BAa76KD60eFXm9ulevnwxGZP9YXL8Y+paI5Uw==",
+        "dependencies": {
+          "Azure.Core": "1.40.0",
+          "Microsoft.Identity.Client": "4.61.3",
+          "Microsoft.Identity.Client.Extensions.Msal": "4.61.3",
+          "System.Security.Cryptography.ProtectedData": "4.7.0"
         }
       },
       "Microsoft.ApplicationInsights.WorkerService": {

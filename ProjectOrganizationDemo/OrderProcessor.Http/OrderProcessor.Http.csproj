@@ -11,8 +11,10 @@
     <PackageReference Include="Microsoft.Azure.Functions.Worker" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Storage.Queues" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\OrderProcessor.Core\OrderProcessor.Core.csproj" />
+    <ProjectReference Include="..\..\AspireDemo\AspireDemo.ServiceDefaults\AspireDemo.ServiceDefaults.csproj" />
   </ItemGroup>
 </Project>

@@ -19,7 +19,7 @@ public sealed class CreateOrderFunction(
     [FromKeyedServices(OrderStoreKeys.Sql)] IOrderStore primaryStore)
 {
     [Function(nameof(CreateOrder))]
-    public async Task<IActionResult> CreateOrder(
+    public async Task<CreateOrderOutput> CreateOrder(
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = "orders")] HttpRequest req,
         [FromBody] CreateOrderRequest request,
         CancellationToken cancellationToken)
@@ -31,11 +31,18 @@ public sealed class CreateOrderFunction(
         var validation = validator.Validate(order);
         if (!validation.IsValid)
         {
-            return new BadRequestObjectResult(new { error = validation.Error });
+            return new CreateOrderOutput
+            {
+                HttpResponse = new BadRequestObjectResult(new { error = validation.Error }),
+            };
         }
 
         await primaryStore.SaveAsync(order, cancellationToken);
 
-        return new CreatedResult($"/api/orders/{order.OrderId}", order);
+        return new CreateOrderOutput
+        {
+            HttpResponse = new CreatedResult($"/api/orders/{order.OrderId}", order),
+            OrderMessage = new OrderMessage(order.OrderId, order.CustomerId, order.Amount),
+        };
     }
 }

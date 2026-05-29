@@ -6,6 +6,11 @@ using OrderProcessor.Core.Services;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
+// Aspire service defaults: OpenTelemetry exporter, health checks, resilience.
+// Under the Aspire AppHost this routes logs/traces/metrics to the dashboard;
+// run standalone with `func start` it is a no-op (no OTLP endpoint configured).
+builder.AddServiceDefaults();
+
 builder.ConfigureFunctionsWebApplication();
 
 builder.Services.Configure<OrderProcessingOptions>(

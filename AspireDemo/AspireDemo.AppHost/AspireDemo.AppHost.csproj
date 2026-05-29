@@ -8,11 +8,15 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.Azure.Functions" />
+    <PackageReference Include="Aspire.Hosting.Azure.ServiceBus" />
+    <PackageReference Include="Aspire.Hosting.Azure.Storage" />
+    <PackageReference Include="Aspire.Hosting.Redis" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\ProjectOrganizationDemo\OrderProcessor.Http\OrderProcessor.Http.csproj" />
     <ProjectReference Include="..\..\ProjectOrganizationDemo\OrderProcessor.Queue\OrderProcessor.Queue.csproj" />
+    <ProjectReference Include="..\..\ProjectOrganizationDemo\OrderProcessor.ServiceBus\OrderProcessor.ServiceBus.csproj" />
   </ItemGroup>
 
 </Project>

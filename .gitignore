@@ -10,6 +10,9 @@ obj/
 ## Azure Functions
 local.settings.json
 
+## Aspire publish output (generated; reproduce with `aspire publish -o ./aspire-output`)
+aspire-output/
+
 ## IDE
 .idea/
 *.swp

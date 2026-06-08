@@ -19,7 +19,7 @@ AspireDemo/
 │   └── aspire.config.json
 └── AspireDemo.ServiceDefaults/
     ├── AspireDemo.ServiceDefaults.csproj  # OpenTelemetry + resilience packages
-    └── Extensions.cs                      # AddServiceDefaults() — referenced by both Functions projects
+    └── Extensions.cs                      # AddServiceDefaults(), referenced by both Functions projects
 ```
 
 ## What this sample demonstrates
@@ -38,6 +38,28 @@ The Part 2 changes are purely additive; the Part 1 flow above is untouched. `Ord
 2. **A separate application-storage resource.** `AddAzureStorage("app-storage").RunAsEmulator()` is a second Azurite resource, distinct from host-storage, so application data does not commingle with the runtime's bookkeeping. `appStorage.AddBlobs("receipts")` + `WithReference(receipts, "receipts")` auto-wires `[BlobOutput("receipts/{OrderId}.json", Connection = "receipts")]`; the function returns the confirmed order and Aspire writes it to a receipt blob.
 3. **Redis via `IConnectionMultiplexer`.** `AddRedis("cache")` runs a local Redis container; `WithReference(cache)` serves `builder.AddRedisClient("cache")` in the worker, which registers `IConnectionMultiplexer`. `ConfirmOrderFunction` uses a `SET NX` key as a cheap idempotency gate against Service Bus at-least-once redelivery. This `IConnectionMultiplexer` path works on every Functions plan (the Redis *trigger* extension needs Premium/Dedicated). Note Aspire provisions Redis with TLS and a generated password; the client integration handles both automatically.
 4. **One declaration, two environments.** Every `RunAsEmulator()` / `AddRedis` is local-only; in publish mode the same code provisions the real Azure resource (Service Bus namespace, containerized Redis on ACA). No per-environment config files.
+
+## What Part 3 adds
+
+Part 3 deploys this same AppHost to Azure. The only code change is the publish target:
+`builder.AddAzureContainerAppEnvironment("aca-env")` (from `Aspire.Hosting.Azure.AppContainers`),
+which declares the Azure Container Apps environment every project and container is published into.
+It is inert locally, so the Part 1/2 inner loop above is unchanged. The line is required since
+Aspire 9.4, which removed the implicit azd-owned ACA environment; without it a publish has no
+compute target.
+
+Generate the deployment Bicep without touching a subscription:
+
+```bash
+cd AspireDemo
+aspire publish -o ./aspire-output   # writes main.bicep + one module folder per resource
+```
+
+The output is git-ignored (reproduce it any time). Each Functions app is generated as an Azure
+Container App with `kind: functionapp` (so ACA derives KEDA scaling from the triggers), an
+internal-only ingress by default (add `.WithExternalHttpEndpoints()` to expose an HTTP trigger),
+`minReplicas: 1`, a user-assigned managed identity, and per-resource role assignments
+(Service Bus Data Owner on `messaging`, Storage Data Contributor on both accounts).
 
 ## Run
 
@@ -58,3 +80,4 @@ The console prints `Dashboard: https://localhost:<port>/login?t=<token>`. Open i
 
 - [Getting Started with .NET Aspire for Azure Functions](https://dev.to/martin_oehlert/getting-started-with-net-aspire-for-azure-functions-2g88) (Series 3, Part 1).
 - Azure Services as Aspire Resources: Service Bus, Storage, and Redis (Series 3, Part 2, publishes 2026-06-05; link added on publish).
+- Deploying .NET Aspire Apps to Azure: AZD, ACA, and What Aspire Generates (Series 3, Part 3, publishes 2026-06-12; link added on publish).

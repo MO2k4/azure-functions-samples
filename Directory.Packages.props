@@ -61,6 +61,9 @@
   <ItemGroup>
     <!-- AspireDemo: AppHost orchestrating the ProjectOrganizationDemo Functions apps -->
     <PackageVersion Include="Aspire.Hosting.Azure.Functions" Version="13.3.5" />
+    <!-- W24 Part 3: the Azure Container Apps compute environment (publish target). AddAzureContainerAppEnvironment
+         lives here; required since Aspire 9.4, when the implicit azd-owned ACA environment was removed. -->
+    <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="13.3.5" />
     <!-- W23 Part 2: Azure services as Aspire resources (pin to the same 13.x train as the AppHost SDK) -->
     <PackageVersion Include="Aspire.Hosting.Azure.ServiceBus" Version="13.3.5" />
     <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.3.5" />

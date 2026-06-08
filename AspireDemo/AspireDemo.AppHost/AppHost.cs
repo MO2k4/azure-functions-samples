@@ -21,6 +21,13 @@ messaging.AddServiceBusQueue("orders");
 // managed cache the current API is AddAzureManagedRedis (AddAzureRedis is obsolete in 13.x).
 var cache = builder.AddRedis("cache");
 
+// W24 Part 3: the publish target. AddAzureContainerAppEnvironment declares the Azure Container
+// Apps environment that every project and containerized resource above is published into. It is
+// inert locally (RunAsEmulator still drives the dev inner loop); it only materialises at
+// publish/deploy. Required since Aspire 9.4, which removed the implicit azd-owned ACA environment:
+// without this line `aspire publish` / `azd` have no compute environment to target.
+builder.AddAzureContainerAppEnvironment("aca-env");
+
 builder.AddAzureFunctionsProject<Projects.OrderProcessor_Http>("orders-http")
     .WithHostStorage(hostStorage);
 

@@ -1,0 +1,13 @@
+using './orders-queue-containerapp.module.bicep'
+
+param aca_env_outputs_azure_container_apps_environment_default_domain = '{{ .Env.ACA_ENV_AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN }}'
+param aca_env_outputs_azure_container_apps_environment_id = '{{ .Env.ACA_ENV_AZURE_CONTAINER_APPS_ENVIRONMENT_ID }}'
+param aca_env_outputs_azure_container_registry_endpoint = '{{ .Env.ACA_ENV_AZURE_CONTAINER_REGISTRY_ENDPOINT }}'
+param aca_env_outputs_azure_container_registry_managed_identity_id = '{{ .Env.ACA_ENV_AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}'
+param host_storage_outputs_blobendpoint = '{{ .Env.HOST_STORAGE_BLOBENDPOINT }}'
+param host_storage_outputs_datalakeendpoint = '{{ .Env.HOST_STORAGE_DATALAKEENDPOINT }}'
+param host_storage_outputs_queueendpoint = '{{ .Env.HOST_STORAGE_QUEUEENDPOINT }}'
+param host_storage_outputs_tableendpoint = '{{ .Env.HOST_STORAGE_TABLEENDPOINT }}'
+param orders_queue_containerimage = '{{ .Image }}'
+param orders_queue_identity_outputs_clientid = '{{ .Env.ORDERS_QUEUE_IDENTITY_CLIENTID }}'
+param orders_queue_identity_outputs_id = '{{ .Env.ORDERS_QUEUE_IDENTITY_ID }}'

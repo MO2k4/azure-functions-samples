@@ -79,5 +79,5 @@ The console prints `Dashboard: https://localhost:<port>/login?t=<token>`. Open i
 ## Articles
 
 - [Getting Started with .NET Aspire for Azure Functions](https://dev.to/martin_oehlert/getting-started-with-net-aspire-for-azure-functions-2g88) (Series 3, Part 1).
-- Azure Services as Aspire Resources: Service Bus, Storage, and Redis (Series 3, Part 2, publishes 2026-06-05; link added on publish).
-- Deploying .NET Aspire Apps to Azure: AZD, ACA, and What Aspire Generates (Series 3, Part 3, publishes 2026-06-12; link added on publish).
+- [Azure Services as Aspire Resources: Service Bus, Storage, and Redis](https://dev.to/martin_oehlert/azure-services-as-aspire-resources-service-bus-storage-and-redis-2260) (Series 3, Part 2).
+- [Deploying .NET Aspire Apps to Azure: AZD, ACA, and What Aspire Generates](https://dev.to/martin_oehlert/deploying-net-aspire-apps-to-azure-azd-aca-and-what-aspire-generates-4kk1) (Series 3, Part 3).

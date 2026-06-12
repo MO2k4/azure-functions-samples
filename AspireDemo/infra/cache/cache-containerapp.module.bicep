@@ -52,4 +52,10 @@ resource cache 'Microsoft.App/containerApps@2025-07-01' = {
       }
     }
   }
+  tags: {
+    'cost-center': 'CC-1000'
+    owner: 'platform-team'
+    environment: 'learning'
+    project: 'aspire-demo'
+  }
 }

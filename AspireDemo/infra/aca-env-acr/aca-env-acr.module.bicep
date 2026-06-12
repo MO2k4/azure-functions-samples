@@ -9,6 +9,10 @@ resource aca_env_acr 'Microsoft.ContainerRegistry/registries@2025-04-01' = {
   }
   tags: {
     'aspire-resource-name': 'aca-env-acr'
+    'cost-center': 'CC-1000'
+    owner: 'platform-team'
+    environment: 'learning'
+    project: 'aspire-demo'
   }
 }
 

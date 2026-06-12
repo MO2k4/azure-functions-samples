@@ -129,4 +129,10 @@ resource orders_queue 'Microsoft.App/containerApps@2025-10-02-preview' = {
     }
   }
   kind: 'functionapp'
+  tags: {
+    'cost-center': 'CC-1000'
+    owner: 'platform-team'
+    environment: 'learning'
+    project: 'aspire-demo'
+  }
 }

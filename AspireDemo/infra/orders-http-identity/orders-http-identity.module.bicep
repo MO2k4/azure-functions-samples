@@ -4,6 +4,12 @@ param location string = resourceGroup().location
 resource orders_http_identity 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' = {
   name: take('orders_http_identity-${uniqueString(resourceGroup().id)}', 128)
   location: location
+  tags: {
+    'cost-center': 'CC-1000'
+    owner: 'platform-team'
+    environment: 'learning'
+    project: 'aspire-demo'
+  }
 }
 
 output id string = orders_http_identity.id

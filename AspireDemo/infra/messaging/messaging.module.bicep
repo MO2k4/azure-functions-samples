@@ -15,6 +15,10 @@ resource messaging 'Microsoft.ServiceBus/namespaces@2024-01-01' = {
   }
   tags: {
     'aspire-resource-name': 'messaging'
+    'cost-center': 'GAZE'
+    owner: 'AZE'
+    environment: 'learning'
+    project: 'aspire-demo'
   }
 }
 

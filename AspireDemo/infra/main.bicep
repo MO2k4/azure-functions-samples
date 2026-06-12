@@ -22,6 +22,11 @@ param cache_password string
 
 var tags = {
   'azd-env-name': environmentName
+  // main.bicep is azd-owned and rewritten by `azd infra gen`; re-apply these after a regen.
+  'cost-center': 'GAZE'
+  owner: 'AZE'
+  environment: 'learning'
+  project: 'aspire-demo'
 }
 
 resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {

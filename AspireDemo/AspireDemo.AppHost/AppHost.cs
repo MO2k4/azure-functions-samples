@@ -1,4 +1,20 @@
+using Aspire.Hosting.Azure;
+using AspireDemo.AppHost;
+using Azure.Provisioning;
+using Azure.Provisioning.Primitives;
+using Azure.Provisioning.AppContainers;
+using Azure.Provisioning.OperationalInsights;
+using Azure.Provisioning.Roles;
+using Microsoft.Extensions.DependencyInjection;
+
 var builder = DistributedApplication.CreateBuilder(args);
+
+// W24: billing tags (cost-center, env) on every Azure resource, declared once in C#
+// instead of edited into each generated .module.bicep. The resolver participates in
+// Azure.Provisioning's Bicep generation, so `azd infra gen` re-emits the tags on
+// every regeneration; hand-edits to infra/ would be lost on the next one.
+builder.Services.Configure<AzureProvisioningOptions>(options =>
+    options.ProvisioningBuildOptions.InfrastructureResolvers.Insert(0, new AzureTagResolver()));
 
 // Host storage (W22 baseline): the connection Functions needs for its own bookkeeping
 // (lease blobs, timer state, queue scaling controller), injected as AzureWebJobsStorage.
@@ -26,7 +42,28 @@ var cache = builder.AddRedis("cache");
 // inert locally (RunAsEmulator still drives the dev inner loop); it only materialises at
 // publish/deploy. Required since Aspire 9.4, which removed the implicit azd-owned ACA environment:
 // without this line `aspire publish` / `azd` have no compute environment to target.
-builder.AddAzureContainerAppEnvironment("aca-env");
+builder.AddAzureContainerAppEnvironment("aca-env")
+    // The environment module's resources (managed env, Log Analytics, its identity)
+    // bind Tags to the module-level `tags` parameter, an expression the resolver
+    // can't add entries to. Rebinding Tags to a literal covers all three; the
+    // parameter stays declared but unused (azd never passes it).
+    .ConfigureInfrastructure(infra =>
+    {
+        var resources = infra.GetProvisionableResources().ToList();
+        var taggable = resources.OfType<ContainerAppManagedEnvironment>().Cast<ProvisionableResource>()
+            .Concat(resources.OfType<OperationalInsightsWorkspace>())
+            .Concat(resources.OfType<UserAssignedIdentity>());
+        foreach (var resource in taggable)
+        {
+            resource.GetType().GetProperty("Tags")?.SetValue(resource, new BicepDictionary<string>
+            {
+                ["cost-center"] = "GAZE",
+                ["owner"] = "AZE",
+                ["environment"] = "learning",
+                ["project"] = "aspire-demo",
+            });
+        }
+    });
 
 builder.AddAzureFunctionsProject<Projects.OrderProcessor_Http>("orders-http")
     .WithHostStorage(hostStorage);

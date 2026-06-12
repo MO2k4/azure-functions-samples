@@ -192,4 +192,10 @@ resource orders_sb 'Microsoft.App/containerApps@2025-10-02-preview' = {
     }
   }
   kind: 'functionapp'
+  tags: {
+    'cost-center': 'GAZE'
+    owner: 'AZE'
+    environment: 'learning'
+    project: 'aspire-demo'
+  }
 }

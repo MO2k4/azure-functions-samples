@@ -10,7 +10,12 @@ param aca_env_acr_outputs_name string
 resource aca_env_mi 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' = {
   name: take('aca_env_mi-${uniqueString(resourceGroup().id)}', 128)
   location: location
-  tags: tags
+  tags: {
+    'cost-center': 'GAZE'
+    owner: 'AZE'
+    environment: 'learning'
+    project: 'aspire-demo'
+  }
 }
 
 resource aca_env_acr 'Microsoft.ContainerRegistry/registries@2025-04-01' existing = {
@@ -35,7 +40,12 @@ resource aca_env_law 'Microsoft.OperationalInsights/workspaces@2025-02-01' = {
       name: 'PerGB2018'
     }
   }
-  tags: tags
+  tags: {
+    'cost-center': 'GAZE'
+    owner: 'AZE'
+    environment: 'learning'
+    project: 'aspire-demo'
+  }
 }
 
 resource aca_env 'Microsoft.App/managedEnvironments@2025-07-01' = {
@@ -56,7 +66,12 @@ resource aca_env 'Microsoft.App/managedEnvironments@2025-07-01' = {
       }
     ]
   }
-  tags: tags
+  tags: {
+    'cost-center': 'GAZE'
+    owner: 'AZE'
+    environment: 'learning'
+    project: 'aspire-demo'
+  }
 }
 
 resource aspireDashboard 'Microsoft.App/managedEnvironments/dotNetComponents@2025-10-02-preview' = {

@@ -19,6 +19,10 @@ resource host_storage 'Microsoft.Storage/storageAccounts@2024-01-01' = {
   }
   tags: {
     'aspire-resource-name': 'host-storage'
+    'cost-center': 'GAZE'
+    owner: 'AZE'
+    environment: 'learning'
+    project: 'aspire-demo'
   }
 }
 

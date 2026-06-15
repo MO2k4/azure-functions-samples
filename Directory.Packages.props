@@ -45,6 +45,8 @@
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.Storage.Blobs" Version="6.8.0" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.ServiceBus" Version="5.24.0" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.Warmup" Version="4.0.1" />
+    <!-- DurableFunctionsDemo (W25): isolated-worker Durable Task extension (1.x line, independent of worker core 2.x) -->
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.DurableTask" Version="1.16.5" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.5.0" />
   </ItemGroup>
   <ItemGroup>

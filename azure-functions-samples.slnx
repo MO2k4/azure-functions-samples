@@ -9,6 +9,7 @@
   <Project Path="BatchCheckpointDemo/BatchCheckpointDemo.csproj" />
   <Project Path="HttpClientFactoryDemo/HttpClientFactoryDemo.csproj" />
   <Project Path="DurableFunctionsDemo/DurableFunctionsDemo.csproj" />
+  <Project Path="DurableApprovalDemo/DurableApprovalDemo.csproj" />
   <Project Path="DurableFanOutDemo/DurableFanOutDemo.csproj" />
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Core/OrderProcessor.Core.csproj" />
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Http/OrderProcessor.Http.csproj" />

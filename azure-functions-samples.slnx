@@ -11,6 +11,7 @@
   <Project Path="DurableFunctionsDemo/DurableFunctionsDemo.csproj" />
   <Project Path="DurableApprovalDemo/DurableApprovalDemo.csproj" />
   <Project Path="DurableFanOutDemo/DurableFanOutDemo.csproj" />
+  <Project Path="DurableEntitiesDemo/DurableEntitiesDemo.csproj" />
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Core/OrderProcessor.Core.csproj" />
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Http/OrderProcessor.Http.csproj" />
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Queue/OrderProcessor.Queue.csproj" />

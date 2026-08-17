@@ -84,4 +84,11 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- DaprDemo (W34): Dapr .NET SDK. 1.18.5 is the newest stable and ships a lib/net10.0 target.
+         Note DaprClient.InvokeMethodAsync/InvokeMethodGrpcAsync are [Obsolete] since 1.17:
+         use DaprClient.CreateInvokeHttpClient for service invocation. -->
+    <PackageVersion Include="Dapr.AspNetCore" Version="1.18.5" />
+    <PackageVersion Include="Dapr.Client" Version="1.18.5" />
+  </ItemGroup>
 </Project>

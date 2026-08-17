@@ -1,0 +1,40 @@
+# Azure pub/sub broker: Service Bus Topics (Stable). The queues variant,
+# pubsub.azure.servicebus.queues, is still Beta for the same building block.
+#
+# Same metadata.name as components/local/pubsub.redis.yaml ("orderpubsub").
+#
+# The connection string never appears here: secretKeyRef pulls it from the Key Vault store
+# defined in secretstore.keyvault.yaml. Key Vault is a name/value store, so `name` and `key`
+# have to be identical (a multi-key store such as Kubernetes secrets is where they differ).
+#
+# For the Entra ID path instead, drop connectionString and set namespaceName to the FQDN
+# (orders-ns.servicebus.windows.net) plus azureClientId. connectionString and namespaceName
+# are mutually exclusive; setting both fails component init.
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: orderpubsub
+spec:
+  type: pubsub.azure.servicebus.topics
+  version: v1
+  metadata:
+    - name: connectionString
+      secretKeyRef:
+        name: orders-servicebus-connection
+        key: orders-servicebus-connection
+    # Dapr creates one Service Bus subscription per (topic, consumerID) and consumerID
+    # defaults to the Dapr app ID. So the subscriptions in the portal are named orders-api
+    # and shipping-api, and two replicas of one app ID compete on a single subscription.
+    #
+    # Entity management is off here, which is the least-privilege shape: pre-create the
+    # "orders.created" topic and both subscriptions in IaC, then assign scoped Data Sender /
+    # Data Receiver. Leave it at the default "false" and the sidecar auto-creates entities
+    # through the Service Bus admin client, which needs Azure Service Bus Data Owner.
+    - name: disableEntityManagement
+      value: "true"
+auth:
+  # Sibling of spec, not a child of it.
+  secretStore: ordersecrets
+scopes:
+  - orders-api
+  - shipping-api

@@ -1,0 +1,20 @@
+# Local pub/sub broker: the same Redis container `dapr init` starts, used as Redis Streams.
+#
+# consumerID is left unset so it defaults to the Dapr app ID. That gives orders-api and
+# shipping-api one consumer group each, so both receive every message; two replicas of the
+# same app ID would compete for messages instead.
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: orderpubsub
+spec:
+  type: pubsub.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: localhost:6379
+    - name: redisPassword
+      value: ""
+scopes:
+  - orders-api
+  - shipping-api

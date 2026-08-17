@@ -1,0 +1,43 @@
+# Azure state store: Cosmos DB for NoSQL, authenticated with a managed identity.
+#
+# Same metadata.name as components/local/statestore.redis.yaml ("orderstore"), so the C# in
+# Orders/OrderEndpoints.cs is byte-for-byte identical against both.
+#
+# Three things that are not visible from the Dapr API surface and will bite you anyway:
+#   1. The container's partition key must be named exactly "/partitionKey" (case-sensitive).
+#      For non-actor state Dapr uses the state key as the partition key value.
+#   2. Dapr writes "<app-id>||<key>", so the document ID in Cosmos DB is "orders-api||ORD-1001",
+#      not "ORD-1001". Anything else reading that container will not find your rows.
+#   3. Cosmos DB is listed as supporting CRUD, transactions, ETags, TTL, and actors, but NOT
+#      the workflow building block. Swapping to Blob Storage or Table Storage additionally
+#      loses transactions, TTL, and actors while the code keeps compiling.
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: orderstore
+spec:
+  type: state.azure.cosmosdb
+  version: v1
+  # Not inside metadata. Cosmos DB rate-limits account-wide metadata requests, and the Dapr
+  # docs recommend raising this rather than letting the sidecar fail to initialise.
+  initTimeout: 5m
+  metadata:
+    - name: url
+      value: "https://<cosmos-account>.documents.azure.com:443/"
+    - name: database
+      value: orders
+    # The field is `collection`, not `container`, even though the portal calls it a container.
+    - name: collection
+      value: orderstate
+    # No masterKey: dropping it selects the Entra ID path. azureClientId is required for a
+    # user-assigned managed identity and omitted entirely for a system-assigned one.
+    #
+    # Cosmos DB for NoSQL does not use standard Azure RBAC on the data plane. On top of the
+    # identity below, assign the native Cosmos role (Built-in Data Contributor,
+    # 00000000-0000-0000-0000-000000000002) with `az cosmosdb sql role assignment create`,
+    # using the identity's OBJECT ID, not the client ID here. The portal cannot do this.
+    - name: azureClientId
+      value: "<user-assigned-managed-identity-client-id>"
+scopes:
+  - orders-api
+  - shipping-api

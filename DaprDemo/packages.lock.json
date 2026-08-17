@@ -1,0 +1,100 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "Dapr.AspNetCore": {
+        "type": "Direct",
+        "requested": "[1.18.5, )",
+        "resolved": "1.18.5",
+        "contentHash": "Qywi9iFpgSvsvTHcuH6GbhtQEI7bmRSBwLC6NyCWtnCm63WiZHopUQCarDwrF8xLXv8GrX2oQzgeaIXsIiHr/w==",
+        "dependencies": {
+          "Dapr.Client": "1.18.5",
+          "Dapr.Common": "1.18.5",
+          "Google.Api.CommonProtos": "2.17.0",
+          "Google.Protobuf": "3.35.0",
+          "Grpc.Net.Client": "2.80.0",
+          "Grpc.Reflection": "2.80.0"
+        }
+      },
+      "Dapr.Client": {
+        "type": "Direct",
+        "requested": "[1.18.5, )",
+        "resolved": "1.18.5",
+        "contentHash": "A+bHe8iZP02PgSwHpJgsu2i3aYOZPEq5XSGE8RVeFlMHf7yHlNx5X5qrwJVpmRYlmQGMMSjkX+nYwEHWiNVMpg==",
+        "dependencies": {
+          "Dapr.Common": "1.18.5",
+          "Dapr.Protos": "1.18.5",
+          "Google.Api.CommonProtos": "2.17.0",
+          "Google.Protobuf": "3.35.0",
+          "Grpc.Net.Client": "2.80.0",
+          "Grpc.Reflection": "2.80.0"
+        }
+      },
+      "Dapr.Common": {
+        "type": "Transitive",
+        "resolved": "1.18.5",
+        "contentHash": "SO9UYSoExm9u9AmvfzhScupOJzpqlAMWGUyGJOP88FU8k8ejqnlSIZStN2j4R+SWd+3QFLLkEHFKwC19hFYxtw==",
+        "dependencies": {
+          "Dapr.Protos": "1.18.5",
+          "Google.Api.CommonProtos": "2.17.0",
+          "Google.Protobuf": "3.35.0",
+          "Grpc.Net.Client": "2.80.0",
+          "Grpc.Reflection": "2.80.0"
+        }
+      },
+      "Dapr.Protos": {
+        "type": "Transitive",
+        "resolved": "1.18.5",
+        "contentHash": "1muWMncjl4/HZ0ys8lngyNvkJC14oRN1AfDfb/nXRkbbmgfoP4tHqkeUGUIkpf+mjqYR+sM6Pz/8zbR9g+HD9w==",
+        "dependencies": {
+          "Google.Api.CommonProtos": "2.17.0",
+          "Google.Protobuf": "3.35.0",
+          "Grpc.Net.Client": "2.80.0"
+        }
+      },
+      "Google.Api.CommonProtos": {
+        "type": "Transitive",
+        "resolved": "2.17.0",
+        "contentHash": "elfQPknFr495hm7vdy6ZlgyQh6yzZq9TU7sS35L/Fj/fqjM/mUGau9gVJLhvQEtUlPjtR80hpn/m9HvBMyCXIw==",
+        "dependencies": {
+          "Google.Protobuf": "[3.31.1, 4.0.0]"
+        }
+      },
+      "Google.Protobuf": {
+        "type": "Transitive",
+        "resolved": "3.35.0",
+        "contentHash": "OrUZCUzBXqdSmsQSWp/EPeINjOBcMU+PrZEJegw0aLgOGFHZ9ZI37X/SFrIxo8C9ghKynaKpPr3BVPc4EujWYg=="
+      },
+      "Grpc.Core.Api": {
+        "type": "Transitive",
+        "resolved": "2.80.0",
+        "contentHash": "i/8s+MOrYa6n7BmZ5bilcbHk+EMJDQHm2MKLhwGAT+urQqlZ6cpjvSivYvuULjebuX+UKieLYZbLRCmVQxFRkw=="
+      },
+      "Grpc.Net.Client": {
+        "type": "Transitive",
+        "resolved": "2.80.0",
+        "contentHash": "I1Aa24nTRMHqx0pmQfvthFsOpejquDjiJV6092KBqjw6EEr3wA9CMXlrdkoEgHartOiJrpKyZiQRl7n0NVlfBg==",
+        "dependencies": {
+          "Grpc.Net.Common": "2.80.0"
+        }
+      },
+      "Grpc.Net.Common": {
+        "type": "Transitive",
+        "resolved": "2.80.0",
+        "contentHash": "E2ERsx+9IXlry4yjBl8btx0XMIKzymGNSvX5jmBS/uSwYyYDoKIDcIREyLqFLvd8vcJdcoRlycpvn9YRXutFpQ==",
+        "dependencies": {
+          "Grpc.Core.Api": "2.80.0"
+        }
+      },
+      "Grpc.Reflection": {
+        "type": "Transitive",
+        "resolved": "2.80.0",
+        "contentHash": "SNGFuUR4OiJM9QUdkpP6gbFVrRKSe2xhL7lvXMP38gcgwPJBFC0wVUcYMue656YhPRIGEjeCa4iXjDQ+VQU2jQ==",
+        "dependencies": {
+          "Google.Protobuf": "3.31.1",
+          "Grpc.Core.Api": "2.80.0"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+# Multi-app run file. From this folder:
+#
+#   dotnet build
+#   dapr run -f .
+#   dapr stop -f .
+#
+# Both entries start the SAME binary under two different Dapr app IDs. That is enough to show
+# what service invocation buys you: orders-api addresses shipping-api by app ID, and neither
+# side knows the other's host or port. Swap resourcesPaths to ./components/azure and the C#
+# does not change.
+#
+# Logs land in <appDirPath>/.dapr/logs/.
+version: 1
+common:
+  env:
+    ASPNETCORE_ENVIRONMENT: Development
+apps:
+  - appID: orders-api
+    appDirPath: .
+    appProtocol: http
+    appPort: 5080
+    resourcesPaths: ./components/local
+    command: ["dotnet", "run", "--no-build", "--", "--urls", "http://localhost:5080"]
+  - appID: shipping-api
+    appDirPath: .
+    appProtocol: http
+    appPort: 5081
+    resourcesPaths: ./components/local
+    command: ["dotnet", "run", "--no-build", "--", "--urls", "http://localhost:5081"]

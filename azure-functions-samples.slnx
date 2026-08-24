@@ -14,6 +14,8 @@
   <Project Path="DurableFanOutDemo/DurableFanOutDemo.csproj" />
   <Project Path="DurableEntitiesDemo/DurableEntitiesDemo.csproj" />
   <Project Path="DaprDemo/DaprDemo.csproj" />
+  <Project Path="DaprWebApiDemo/OrderApi/OrderApi.csproj" />
+  <Project Path="DaprWebApiDemo/InventoryApi/InventoryApi.csproj" />
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Core/OrderProcessor.Core.csproj" />
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Http/OrderProcessor.Http.csproj" />
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Queue/OrderProcessor.Queue.csproj" />

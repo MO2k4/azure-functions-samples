@@ -1,0 +1,36 @@
+# Multi-app run file. From this folder:
+#
+#   dotnet build
+#   dapr run -f .
+#   dapr stop -f .
+#
+# Two separate projects this time, not one binary under two app IDs: orders-api owns state and
+# calls out, inventory-api only answers. Every relative path below is resolved against
+# appDirPath, which is why both apps keep appDirPath "." and select their project on the
+# command line. Swap resourcesPaths to ./components/azure and the C# does not change.
+#
+# Logs land in <appDirPath>/.dapr/logs/.
+version: 1
+common:
+  env:
+    ASPNETCORE_ENVIRONMENT: Development
+    # Inbound app authentication, deliberately left off by default so the curl examples in
+    # README.md work. Set APP_API_TOKEN in the shell before `dapr run -f .` (so that both the
+    # app and daprd inherit it) and DaprApiTokenFilter starts enforcing the dapr-api-token
+    # header on /orders. Note the asymmetry: the app's own OUTBOUND calls to its sidecar use
+    # DAPR_API_TOKEN, a different variable carried on the same header name.
+    #
+    #   APP_API_TOKEN: local-dev-app-token
+apps:
+  - appID: orders-api
+    appDirPath: .
+    appProtocol: http
+    appPort: 5100
+    resourcesPaths: ./components/local
+    command: ["dotnet", "run", "--project", "./OrderApi", "--no-build", "--", "--urls", "http://localhost:5100"]
+  - appID: inventory-api
+    appDirPath: .
+    appProtocol: http
+    appPort: 5101
+    resourcesPaths: ./components/local
+    command: ["dotnet", "run", "--project", "./InventoryApi", "--no-build", "--", "--urls", "http://localhost:5101"]

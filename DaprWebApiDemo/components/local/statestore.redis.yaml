@@ -1,0 +1,22 @@
+# Local state store: the Redis container `dapr init` leaves running on localhost:6379.
+#
+# The only thing the C# knows about this file is metadata.name ("orderstore"). Point
+# `dapr run --resources-path` at components/azure instead and the same code writes to
+# Cosmos DB.
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: orderstore
+spec:
+  type: state.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: localhost:6379
+    - name: redisPassword
+      value: ""
+# scopes limits which app IDs load the component. Without it, every Dapr app in the
+# environment loads every component. inventory-api is deliberately absent: it holds no
+# Dapr state, so it has no reason to be able to reach the store.
+scopes:
+  - orders-api

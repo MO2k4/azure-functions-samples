@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- No Dapr package reference, on purpose. inventory-api is reached BY app ID, it does not
+       reach anything by app ID, so it never touches the SDK. Being callable through Dapr costs
+       a target service exactly zero lines of code. -->
+</Project>

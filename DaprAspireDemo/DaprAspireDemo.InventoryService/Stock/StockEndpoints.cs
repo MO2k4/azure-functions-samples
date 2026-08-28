@@ -37,7 +37,9 @@ public static class StockEndpoints
     /// </summary>
     private static IResult CheckStock(StockCheckRequest request)
     {
-        if (request.Lines.Count == 0)
+        // Same trap as the caller: a body with no "lines" deserialises to null, not to an empty
+        // list, however the record is annotated. The 400 is deliberate on both sides.
+        if (request.Lines is not { Count: > 0 })
         {
             return Results.BadRequest(new ErrorResponse("A stock check needs at least one line."));
         }

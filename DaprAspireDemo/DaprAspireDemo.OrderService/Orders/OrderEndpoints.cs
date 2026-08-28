@@ -35,7 +35,10 @@ public static class OrderEndpoints
         ILogger<Order> logger,
         CancellationToken cancellationToken)
     {
-        if (request.Lines.Count == 0)
+        // The annotation on CreateOrderRequest.Lines says non-null, but System.Text.Json does not
+        // enforce that on the way in: a body with no "lines" at all binds to null. The pattern
+        // covers the missing list and the empty one together, so neither turns into a 500.
+        if (request.Lines is not { Count: > 0 })
         {
             return Results.BadRequest(new ErrorResponse("An order needs at least one line."));
         }
@@ -119,6 +122,15 @@ public static class OrderEndpoints
                 title: "Inventory did not answer in time.",
                 detail: error.Message,
                 statusCode: StatusCodes.Status504GatewayTimeout),
+
+        // Not "rejected": inventory-service answered, the body just was not what it
+        // promised to be. Saying so is the difference between looking at a contract
+        // change and looking for a stock rule that does not exist.
+        InvocationFailure.InvalidResponse =>
+            Results.Problem(
+                title: "Inventory returned an unusable response.",
+                detail: error.Message,
+                statusCode: StatusCodes.Status502BadGateway),
 
         _ => Results.Problem(
             title: "Inventory rejected the stock check.",

@@ -89,7 +89,10 @@ public sealed class InventoryClient(
         {
             // HTTP 500 plus ERR_DIRECT_INVOKE means the sidecar has no address for the app ID.
             // During an Aspire start this is a normal transient: the target's sidecar may not have
-            // registered with the placement service yet.
+            // registered with the placement service yet. It is permanent when something rewrote the
+            // app ID before Dapr saw it; the detail then names an ID nobody registered, such as
+            // "localhost". See the keyed-registration comment in Program.cs for the one way this
+            // sample can produce that.
             logger.LogWarning("Sidecar could not route to {AppId}: {Detail}", AppId, daprError?.Message ?? raw);
 
             return Fail(InvocationFailure.TargetUnreachable, status, $"Dapr could not route to '{AppId}'.");

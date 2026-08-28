@@ -91,4 +91,13 @@
     <PackageVersion Include="Dapr.AspNetCore" Version="1.18.5" />
     <PackageVersion Include="Dapr.Client" Version="1.18.5" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- DaprAspireDemo (W36): Dapr sidecars as Aspire resources. This is the Community Toolkit
+         package, not Aspire.Hosting.Dapr: every one of that package's 20 versions is deprecated
+         on nuget.org ("We will no longer be publishing new versions of this package. We recommend
+         using the CommunityToolkit.Aspire.Hosting.Dapr package going forward"), and it stopped at
+         9.1.0. 13.0.0 is the newest stable here and depends on Aspire.Hosting >= 13.0.0, so it
+         rides the same 13.x train as the AppHost SDK. -->
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Dapr" Version="13.0.0" />
+  </ItemGroup>
 </Project>

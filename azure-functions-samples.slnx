@@ -21,6 +21,10 @@
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Queue/OrderProcessor.Queue.csproj" />
   <Project Path="AspireDemo/AspireDemo.AppHost/AspireDemo.AppHost.csproj" />
   <Project Path="AspireDemo/AspireDemo.ServiceDefaults/AspireDemo.ServiceDefaults.csproj" />
+  <Project Path="DaprAspireDemo/DaprAspireDemo.AppHost/DaprAspireDemo.AppHost.csproj" />
+  <Project Path="DaprAspireDemo/DaprAspireDemo.ServiceDefaults/DaprAspireDemo.ServiceDefaults.csproj" />
+  <Project Path="DaprAspireDemo/DaprAspireDemo.OrderService/DaprAspireDemo.OrderService.csproj" />
+  <Project Path="DaprAspireDemo/DaprAspireDemo.InventoryService/DaprAspireDemo.InventoryService.csproj" />
   <Project Path="MigrationDemo/Settlement.Core/Settlement.Core.csproj" />
   <Project Path="MigrationDemo/Settlement.FunctionApp/Settlement.FunctionApp.csproj" />
   <Project Path="MigrationDemo/Settlement.AppService/Settlement.AppService.csproj" />

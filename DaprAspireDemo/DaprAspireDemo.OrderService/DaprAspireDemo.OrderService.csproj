@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Dapr.AspNetCore" />
+    <PackageReference Include="Dapr.Client" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DaprAspireDemo.ServiceDefaults\DaprAspireDemo.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>

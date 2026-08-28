@@ -1,0 +1,23 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.5.3">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsAspireHost>true</IsAspireHost>
+    <!-- Aspire 13.5 defaults this to false and then warns ASPIRE010 that it is false. Setting it
+         to true takes the dashboard and the orchestrator (DCP) from the installed Aspire CLI
+         bundle instead of from NuGet, which is also what removes the Aspire.Dashboard.Sdk and
+         DCP package references from the graph. Requires the aspire CLI on PATH. -->
+    <AspireUseCliBundle>true</AspireUseCliBundle>
+    <UserSecretsId>dapraspiredemo-apphost-w36</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.Dapr" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DaprAspireDemo.OrderService\DaprAspireDemo.OrderService.csproj" />
+    <ProjectReference Include="..\DaprAspireDemo.InventoryService\DaprAspireDemo.InventoryService.csproj" />
+  </ItemGroup>
+
+</Project>

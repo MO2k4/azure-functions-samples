@@ -1,0 +1,27 @@
+# The state store the order-service sidecar actually loads.
+#
+# Without this file, builder.AddDaprStateStore("statestore") generates its own component with
+# spec.type: state.in-memory into a temp folder and passes that folder as --resources-path. That
+# flag REPLACES the sidecar's default --components-path, so ~/.dapr/components is not merged in:
+# the sidecar sees exactly one component, and every write disappears when it restarts.
+#
+# metadata.name has to match the string the application passes to SaveStateAsync, which is the
+# same string as the Aspire resource name in AddDaprStateStore.
+#
+# redisHost points at the container `dapr init` created (dapr_redis, published on 6379). Nothing
+# in the sample starts it: it is machine-level Dapr infrastructure, which is exactly the part
+# Aspire does not orchestrate.
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: statestore
+spec:
+  type: state.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: localhost:6379
+    - name: redisPassword
+      value: ""
+    - name: actorStateStore
+      value: "true"

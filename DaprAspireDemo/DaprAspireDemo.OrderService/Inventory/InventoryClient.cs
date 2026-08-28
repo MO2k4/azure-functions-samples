@@ -47,7 +47,21 @@ public sealed class InventoryClient(
                 return await TranslateFailureAsync(response, cancellationToken);
             }
 
-            var body = await response.Content.ReadFromJsonAsync<StockCheckResponse>(cancellationToken);
+            StockCheckResponse? body;
+
+            try
+            {
+                body = await response.Content.ReadFromJsonAsync<StockCheckResponse>(cancellationToken);
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                // A 2xx is not a promise that the body is the shape this client expects. A
+                // version-skewed or half-written response throws here, and without this clause it
+                // leaves as an unhandled exception: the one failure the Result cannot describe.
+                logger.LogWarning(ex, "inventory-service answered {Status} with a body that did not deserialise.", (int)response.StatusCode);
+
+                return Fail(InvocationFailure.InvalidResponse, (int)response.StatusCode, "inventory-service returned a body that did not deserialise.");
+            }
 
             return body is null
                 ? Fail(InvocationFailure.InvalidResponse, (int)response.StatusCode, "inventory-service returned an empty body.")

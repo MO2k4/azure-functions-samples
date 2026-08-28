@@ -22,16 +22,19 @@ builder.Services.AddDaprClient();
 // It is registered as a keyed singleton rather than through AddHttpClient to keep the app ID out
 // of reach of service discovery. AddServiceDefaults calls ConfigureHttpClientDefaults(http =>
 // http.AddServiceDiscovery()), so every factory-created client in this process carries the Aspire
-// service-discovery handler. That handler does no harm today: with no
-// services__inventory-service__http__0 in configuration it falls through to the pass-through
-// provider and leaves the URI alone, and an AddHttpClient registration with this BaseAddress and
-// an InvocationHandler was measured working. It stops being harmless the moment such a value
-// exists, say because someone adds WithReference(inventory) in the AppHost. Service discovery
-// then rewrites the host to the resolved endpoint, and Dapr's InvocationHandler reads whatever
-// host it is handed as the app ID:
+// service-discovery handler. As the AppHost stands that handler is harmless: nothing configures an
+// endpoint for inventory-service, so it falls through to the pass-through provider and leaves the
+// URI alone, and an AddHttpClient registration with this BaseAddress and an InvocationHandler was
+// measured working.
+//
+// Adding WithReference(inventory) to the order-service resource is what breaks it, and that was
+// measured too. The AppHost then hands this process
+// services__inventory-service__http__0=http://localhost:5049; service discovery rewrites the host
+// before Dapr's handler runs, and the handler reads the rewritten host as the app ID:
 //   {"errorCode":"ERR_DIRECT_INVOKE","message":"failed to invoke, id: localhost,
 //    err: couldn't find service: localhost"}
-// The two mechanisms are not exclusive, they are ordered, and service discovery wins.
+// The two mechanisms are not exclusive, they are ordered, and service discovery wins. The keyed
+// client never enters the factory, so the same WithReference leaves it answering 201.
 //
 // Traces survive the detour. AddHttpClientInstrumentation listens on the HttpClient
 // DiagnosticSource, not on the factory, so the outbound span is recorded either way.

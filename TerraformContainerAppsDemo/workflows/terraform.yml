@@ -1,0 +1,141 @@
+name: Terraform
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ["TerraformContainerAppsDemo/infra/**"]
+  push:
+    branches: [main]
+    paths: ["TerraformContainerAppsDemo/infra/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-${{ github.ref }}
+  # Never true here. The azurerm backend lock is an infinite blob lease, so a cancelled apply
+  # strands the state locked until someone runs terraform force-unlock.
+  cancel-in-progress: false
+
+env:
+  TF_IN_AUTOMATION: "true"
+  ARM_USE_OIDC: "true"
+  ARM_USE_AZUREAD: "true"
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+jobs:
+  plan:
+    name: Plan (prod)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: TerraformContainerAppsDemo/infra
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.16.3
+
+      - name: Init
+        id: init
+        run: terraform init -input=false -backend-config=envs/prod.backend.hcl
+
+      - name: Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Plan
+        id: plan
+        env:
+          TF_VAR_orders_api_key: ${{ secrets.ORDERS_API_KEY }}
+        run: terraform plan -input=false -no-color -lock-timeout=5m -var-file=envs/prod.tfvars -out=tfplan
+        continue-on-error: true
+
+      - name: Comment plan on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v9
+        env:
+          PLAN: ${{ steps.plan.outputs.stdout }}
+        with:
+          script: |
+            const body = [
+              `### Terraform plan \`${{ steps.plan.outcome }}\``,
+              '',
+              '<details><summary>Show plan</summary>',
+              '',
+              '```terraform',
+              process.env.PLAN.slice(0, 55000),
+              '```',
+              '',
+              '</details>'
+            ].join('\n');
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const marker = '### Terraform plan';
+
+            const existing = (await github.paginate(
+              github.rest.issues.listComments, { owner, repo, issue_number }
+            )).find(c => c.user.type === 'Bot' && c.body.startsWith(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      - name: Fail if plan errored
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      # A saved plan carries sensitive values in cleartext and any user with repo read can
+      # download an artifact. Keep the retention short.
+      - name: Upload plan
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: TerraformContainerAppsDemo/infra/tfplan
+          retention-days: 1
+
+  apply:
+    name: Apply (prod)
+    needs: plan
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # The approval gate is this key and nothing else. Required reviewers, wait timers and
+    # deployment branch rules are configured on the environment in repo settings.
+    environment: prod
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: TerraformContainerAppsDemo/infra
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.16.3
+          terraform_wrapper: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: TerraformContainerAppsDemo/infra
+
+      - name: Init
+        run: terraform init -input=false -backend-config=envs/prod.backend.hcl
+
+      # No -var-file and no -auto-approve: a saved plan takes no further planning options, and
+      # passing the file is the approval.
+      - name: Apply
+        run: terraform apply -input=false -lock-timeout=5m tfplan

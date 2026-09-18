@@ -11,6 +11,7 @@ Companion code for the **Azure Functions for .NET Developers** series on dev.to.
 | [ConfigurationDemo](./ConfigurationDemo) | Configuration Done Right (Part 6) | -- |
 | [EventHubDemo](./EventHubDemo) | Event Hub Processing (Part 4+) | OpenTelemetry + Azure Monitor |
 | [ProjectOrganizationDemo](./ProjectOrganizationDemo) | Structuring Complex Function Apps: Project Organization (Part 2.4) | -- |
+| [TerraformContainerAppsDemo](./TerraformContainerAppsDemo) | Infrastructure as Code: Terraform for Your New Stack (Part 5.7) | Log Analytics via the Container Apps environment |
 
 HttpTriggerDemo and EventHubDemo demonstrate the two monitoring approaches from [Part 9: Monitoring and Troubleshooting](https://dev.to/martin_oehlert/monitoring-and-troubleshooting-application-insights-basics).
 

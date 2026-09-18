@@ -1,0 +1,82 @@
+name: Terraform drift
+
+on:
+  schedule:
+    - cron: "17 6 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    # If the prod environment has required reviewers, this scheduled run sits waiting for
+    # approval. Give drift its own read-scoped environment with no reviewers when that happens.
+    environment: prod
+    permissions:
+      contents: read
+      id-token: write
+      issues: write
+    defaults:
+      run:
+        working-directory: TerraformContainerAppsDemo/infra
+    env:
+      TF_IN_AUTOMATION: "true"
+      ARM_USE_OIDC: "true"
+      ARM_USE_AZUREAD: "true"
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.16.3
+
+      - name: Init
+        run: terraform init -input=false -backend-config=envs/prod.backend.hcl
+
+      # -detailed-exitcode is what makes this possible: 0 no changes, 1 error, 2 changes.
+      # Without it a plan with changes and a plan without both exit 0.
+      - name: Plan with detailed exit code
+        id: plan
+        env:
+          TF_VAR_orders_api_key: ${{ secrets.ORDERS_API_KEY }}
+        run: terraform plan -input=false -no-color -lock-timeout=5m -detailed-exitcode -var-file=envs/prod.tfvars
+        continue-on-error: true
+
+      - name: Fail the job on a real error
+        if: steps.plan.outputs.exitcode == '1'
+        run: exit 1
+
+      - name: Open or update a drift issue
+        if: steps.plan.outputs.exitcode == '2'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PLAN: ${{ steps.plan.outputs.stdout }}
+        run: |
+          title="Terraform drift detected in prod"
+          {
+            echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            echo '```'
+            echo "${PLAN:0:55000}"
+            echo '```'
+          } > body.md
+          existing=$(gh issue list --state open --label drift --search "$title" --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file body.md
+          else
+            gh issue create --title "$title" --label drift --body-file body.md
+          fi
+
+      # A detector that only opens issues trains everyone to ignore it within two weeks.
+      - name: Close the drift issue when clean
+        if: steps.plan.outputs.exitcode == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue list --state open --label drift --json number --jq '.[].number' \
+            | xargs -r -I{} gh issue close {} --comment "Plan is clean again."

@@ -1,0 +1,42 @@
+# Fill these from `azd env get-values` (or the deployment outputs) and the key from the README.
+@gateway = https://apim-orders-xxxxxxxx.azure-api.net/sales
+@key = <primary key of the contoso-shop subscription>
+
+### 1. No key: 401 from the gateway, the function never sees the call
+GET {{gateway}}/orders
+
+### 2. Key in the header: 200
+GET {{gateway}}/orders
+Ocp-Apim-Subscription-Key: {{key}}
+
+### 3. Place an order: 201 with a Location header
+# @name create
+POST {{gateway}}/orders
+Ocp-Apim-Subscription-Key: {{key}}
+Content-Type: application/json
+
+{
+  "customerId": "C-1001",
+  "lines": [
+    { "sku": "BOOK-0042", "quantity": 2, "unitPrice": 24.90 },
+    { "sku": "PEN-0007", "quantity": 10, "unitPrice": 1.50 }
+  ]
+}
+
+### 4. Read it back
+GET {{gateway}}/orders/{{create.response.body.$.orderId}}
+Ocp-Apim-Subscription-Key: {{key}}
+
+### 5. Validation failure: 400 from the function, passed through by the gateway
+POST {{gateway}}/orders
+Ocp-Apim-Subscription-Key: {{key}}
+Content-Type: application/json
+
+{ "customerId": "C-1001", "lines": [] }
+
+### 6. Key in the query string: also 200, but now the key sits in every access log on the way
+GET {{gateway}}/orders?subscription-key={{key}}
+
+### 7. Wrong key: 401
+GET {{gateway}}/orders
+Ocp-Apim-Subscription-Key: 00000000000000000000000000000000

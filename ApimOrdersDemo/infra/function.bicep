@@ -8,6 +8,8 @@ param resourceToken string
 @description('Value of the function key API Management sends as x-functions-key.')
 param apimFunctionKey string
 
+param appInsightsConnectionString string
+
 var storageBlobDataOwner = 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
 var deploymentContainer = 'deployments'
 
@@ -59,6 +61,7 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
       minTlsVersion: '1.2'
       appSettings: [
         { name: 'AzureWebJobsStorage__accountName', value: storage.name }
+        { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString }
       ]
     }
     functionAppConfig: {

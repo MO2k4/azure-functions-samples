@@ -19,6 +19,10 @@
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Core/OrderProcessor.Core.csproj" />
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Http/OrderProcessor.Http.csproj" />
   <Project Path="ProjectOrganizationDemo/OrderProcessor.Queue/OrderProcessor.Queue.csproj" />
+  <Folder Name="/ApimOrdersDemo/" />
+  <Folder Name="/ApimOrdersDemo/src/">
+    <Project Path="ApimOrdersDemo/src/OrdersApi/OrdersApi.csproj" />
+  </Folder>
   <Project Path="AspireDemo/AspireDemo.AppHost/AspireDemo.AppHost.csproj" />
   <Project Path="AspireDemo/AspireDemo.ServiceDefaults/AspireDemo.ServiceDefaults.csproj" />
   <Project Path="DaprAspireDemo/DaprAspireDemo.AppHost/DaprAspireDemo.AppHost.csproj" />

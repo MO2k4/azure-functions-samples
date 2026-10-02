@@ -25,6 +25,27 @@ param tags object = {
 
 var resourceToken = take(uniqueString(subscription().id, resourceGroup().id, environmentName), 8)
 
+resource logs 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
+  name: 'log-orders-${resourceToken}'
+  location: location
+  tags: tags
+  properties: {
+    sku: { name: 'PerGB2018' }
+    retentionInDays: 30
+  }
+}
+
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: 'appi-orders-${resourceToken}'
+  location: location
+  tags: tags
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: logs.id
+  }
+}
+
 module function 'function.bicep' = {
   name: 'function'
   params: {
@@ -32,6 +53,7 @@ module function 'function.bicep' = {
     tags: tags
     resourceToken: resourceToken
     apimFunctionKey: apimFunctionKey
+    appInsightsConnectionString: appInsights.properties.ConnectionString
   }
 }
 
@@ -45,6 +67,8 @@ module apim 'apim.bicep' = {
     publisherEmail: publisherEmail
     functionBaseUrl: function.outputs.baseUrl
     functionKey: apimFunctionKey
+    appInsightsId: appInsights.id
+    appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
   }
 }
 
@@ -53,3 +77,4 @@ output FUNCTION_BASE_URL string = function.outputs.baseUrl
 output APIM_NAME string = apim.outputs.name
 output APIM_GATEWAY_URL string = apim.outputs.gatewayUrl
 output APIM_SUBSCRIPTION_ID string = apim.outputs.subscriptionId
+output APPINSIGHTS_NAME string = appInsights.name

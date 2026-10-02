@@ -3,7 +3,9 @@
   "logging": {
     "logLevel": {
       "default": "Warning",
-      "Function": "Information"
+      "Function": "Information",
+      "Host.Results": "Information",
+      "Host.Startup": "Information"
     }
   }
 }

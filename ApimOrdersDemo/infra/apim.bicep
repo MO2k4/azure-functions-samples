@@ -13,6 +13,9 @@ param functionBaseUrl string
 @secure()
 param functionKey string
 
+param appInsightsId string
+param appInsightsInstrumentationKey string
+
 resource apim 'Microsoft.ApiManagement/service@2024-05-01' = {
   name: 'apim-orders-${resourceToken}'
   location: location
@@ -90,6 +93,35 @@ resource ordersApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2024-05-
 '''
   }
   dependsOn: [ordersBackend]
+}
+
+resource appInsightsLogger 'Microsoft.ApiManagement/service/loggers@2024-05-01' = {
+  parent: apim
+  name: 'appinsights'
+  properties: {
+    loggerType: 'applicationInsights'
+    resourceId: appInsightsId
+    credentials: {
+      instrumentationKey: appInsightsInstrumentationKey
+    }
+  }
+}
+
+// 100% sampling so every cold call shows up: the request row carries the gateway's total time,
+// the dependency row the backend call, and the difference is what the gateway itself spent.
+resource ordersApiDiagnostics 'Microsoft.ApiManagement/service/apis/diagnostics@2024-05-01' = {
+  parent: ordersApi
+  name: 'applicationinsights'
+  properties: {
+    loggerId: appInsightsLogger.id
+    alwaysLog: 'allErrors'
+    httpCorrelationProtocol: 'W3C'
+    verbosity: 'information'
+    sampling: {
+      samplingType: 'fixed'
+      percentage: 100
+    }
+  }
 }
 
 resource partnerProduct 'Microsoft.ApiManagement/service/products@2024-05-01' = {

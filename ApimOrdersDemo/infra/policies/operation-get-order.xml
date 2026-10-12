@@ -1,7 +1,9 @@
 <policies>
   <inbound>
     <base />
-    <cache-lookup vary-by-developer="true" vary-by-developer-groups="false" />
+    <cache-lookup vary-by-developer="false" vary-by-developer-groups="false">
+      <vary-by-header>x-partner</vary-by-header>
+    </cache-lookup>
   </inbound>
   <backend>
     <base />

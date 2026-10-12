@@ -24,7 +24,7 @@ The tested path is the Azure CLI one below (`az deployment group create` plus `f
 cd ApimOrdersDemo
 azd env new apim-orders
 azd env set APIM_PUBLISHER_EMAIL you@example.com
-azd env set APIM_SKU Consumption        # or BasicV2
+azd env set APIM_SKU BasicV2            # Consumption only without the Part 2 policies, see below
 azd up
 ```
 
@@ -33,7 +33,7 @@ Without azd (tested):
 ```bash
 az group create -n rg-apim-orders -l westeurope
 az deployment group create -g rg-apim-orders -f infra/main.bicep \
-  -p environmentName=apim-orders publisherEmail=you@example.com apimSku=Consumption
+  -p environmentName=apim-orders publisherEmail=you@example.com apimSku=BasicV2
 func azure functionapp publish <FUNCTION_APP_NAME> --dotnet-isolated   # run in src/OrdersApi
 ```
 
@@ -67,14 +67,14 @@ Companion to Part 2, **Policies: The Heart of APIM**. Each scope gets its own fi
 
 | File | Scope | What it does |
 |---|---|---|
-| `global.xml` | all APIs | sets `x-correlation-id` on the request and returns it on the response; `<forward-request />` in `backend` |
+| `global.xml` | all APIs | sets `x-correlation-id` on the request and returns it on the response; removes the `X-Powered-By` response header; `<forward-request />` in `backend` |
 | `product-orders-partners.xml` | product `orders-partners` | `rate-limit`: 10 calls per 60 seconds per subscription |
-| `api-orders.xml` | API `orders` | routes to the `orders-func` backend (which adds the function key), removes the subscription key header |
-| `operation-get-order.xml` | operation `get-order` | response cache for `GET /orders/{orderId}`, 30 seconds, per subscription |
+| `api-orders.xml` | API `orders` | `ip-filter` (forbids a documentation range; swap in the ranges you want to block, or `action="allow"` for an allow-list), routes to the `orders-func` backend (which adds the function key), removes the subscription key header, sends the subscription name as `x-partner`, and a `<choose>` that adds `rate-limit-by-key` (3 calls a minute per subscription) to `POST` only |
+| `operation-get-order.xml` | operation `get-order` | response cache for `GET /orders/{orderId}`, 30 seconds, per subscription (keyed on `x-partner`; `vary-by-developer` would share one entry between subscriptions that have no owner) |
 
 Every narrower file starts each section with `<base />`, which runs the broader scope's section at that spot. An operation policy without it skips the product rate limit and the backend route; through this sample the call then reaches the function without its key and gets a 401.
 
-The built-in cache doesn't exist on Consumption, so deploy with `apimSku=BasicV2` to see `cache-lookup` hit. Product policies only run for product-scoped subscriptions like `contoso-shop`: the built-in all-access subscription (the portal test console) skips the rate limit.
+**These policies need `apimSku=BasicV2` (or higher).** `rate-limit-by-key` isn't available on Consumption: the deployment fails with `Policy is not allowed in 'Consumption' sku`. The cache statements save on Consumption, but that tier has no built-in cache; Learn points to an external Redis-compatible cache instead. To deploy on Consumption, remove the `<choose>` block from `api-orders.xml`. Product policies only run for product-scoped subscriptions like `contoso-shop`: the built-in all-access subscription (the portal test console) skips the rate limit.
 
 ## Rename the key header
 

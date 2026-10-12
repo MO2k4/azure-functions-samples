@@ -73,26 +73,34 @@ resource ordersApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2024-05-
   name: 'policy'
   properties: {
     format: 'rawxml'
-    value: '''
-<policies>
-  <inbound>
-    <base />
-    <set-backend-service backend-id="orders-func" />
-    <set-header name="Ocp-Apim-Subscription-Key" exists-action="delete" />
-  </inbound>
-  <backend>
-    <base />
-  </backend>
-  <outbound>
-    <base />
-  </outbound>
-  <on-error>
-    <base />
-  </on-error>
-</policies>
-'''
+    value: loadTextContent('policies/api-orders.xml')
   }
   dependsOn: [ordersBackend]
+}
+
+// One file per scope under infra/policies. Each narrower scope pulls in the broader one with <base />.
+resource globalPolicy 'Microsoft.ApiManagement/service/policies@2024-05-01' = {
+  parent: apim
+  name: 'policy'
+  properties: {
+    format: 'rawxml'
+    value: loadTextContent('policies/global.xml')
+  }
+}
+
+resource getOrder 'Microsoft.ApiManagement/service/apis/operations@2024-05-01' existing = {
+  parent: ordersApi
+  name: 'get-order'
+}
+
+// cache-lookup uses the built-in cache, which Consumption doesn't have (BasicV2 does).
+resource getOrderPolicy 'Microsoft.ApiManagement/service/apis/operations/policies@2024-05-01' = {
+  parent: getOrder
+  name: 'policy'
+  properties: {
+    format: 'rawxml'
+    value: loadTextContent('policies/operation-get-order.xml')
+  }
 }
 
 resource appInsightsLogger 'Microsoft.ApiManagement/service/loggers@2024-05-01' = {
@@ -133,6 +141,15 @@ resource partnerProduct 'Microsoft.ApiManagement/service/products@2024-05-01' = 
     subscriptionRequired: true
     approvalRequired: false
     state: 'published'
+  }
+}
+
+resource partnerProductPolicy 'Microsoft.ApiManagement/service/products/policies@2024-05-01' = {
+  parent: partnerProduct
+  name: 'policy'
+  properties: {
+    format: 'rawxml'
+    value: loadTextContent('policies/product-orders-partners.xml')
   }
 }
 

@@ -7,7 +7,7 @@ param location string = resourceGroup().location
 
 @description('Consumption: $0 idle, per-call billing, cold first call. BasicV2: one warm unit, ~$150/month. Neither can be changed into the other in place.')
 @allowed(['Consumption', 'BasicV2'])
-param apimSku string = 'Consumption'
+param apimSku string = 'BasicV2'
 
 param publisherEmail string
 

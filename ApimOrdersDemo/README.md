@@ -24,7 +24,7 @@ The tested path is the Azure CLI one below (`az deployment group create` plus `f
 cd ApimOrdersDemo
 azd env new apim-orders
 azd env set APIM_PUBLISHER_EMAIL you@example.com
-azd env set APIM_SKU BasicV2            # Consumption only without the Part 2 policies, see below
+azd env set APIM_SKU BasicV2            # the default; Consumption only without the Part 2 policies, see below
 azd up
 ```
 
@@ -33,7 +33,7 @@ Without azd (tested):
 ```bash
 az group create -n rg-apim-orders -l westeurope
 az deployment group create -g rg-apim-orders -f infra/main.bicep \
-  -p environmentName=apim-orders publisherEmail=you@example.com apimSku=BasicV2
+  -p environmentName=apim-orders publisherEmail=you@example.com
 func azure functionapp publish <FUNCTION_APP_NAME> --dotnet-isolated   # run in src/OrdersApi
 ```
 
@@ -74,7 +74,23 @@ Companion to Part 2, **Policies: The Heart of APIM**. Each scope gets its own fi
 
 Every narrower file starts each section with `<base />`, which runs the broader scope's section at that spot. An operation policy without it skips the product rate limit and the backend route; through this sample the call then reaches the function without its key and gets a 401.
 
-**These policies need `apimSku=BasicV2` (or higher).** `rate-limit-by-key` isn't available on Consumption: the deployment fails with `Policy is not allowed in 'Consumption' sku`. The cache statements save on Consumption, but that tier has no built-in cache; Learn points to an external Redis-compatible cache instead. To deploy on Consumption, remove the `<choose>` block from `api-orders.xml`. Product policies only run for product-scoped subscriptions like `contoso-shop`: the built-in all-access subscription (the portal test console) skips the rate limit.
+**These policies need `apimSku=BasicV2` (the default) or higher.** `rate-limit-by-key` isn't available on Consumption: the deployment fails with `Policy is not allowed in 'Consumption' sku`. The cache statements save on Consumption, but that tier has no built-in cache; Learn points to an external Redis-compatible cache instead. To deploy on Consumption, remove the `<choose>` block from `api-orders.xml`. Product policies only run for product-scoped subscriptions like `contoso-shop`: the built-in all-access subscription (the portal test console) skips the rate limit.
+
+### Policy notes
+
+- **Portal editors per scope.** Global: APIs > All APIs > Inbound processing > `</>`. Product: Products > the product > Policies. API: the API > Design > All operations > `</>`. Operation: the API > Design > the operation > `</>`. Each editor has **Calculate effective policy**; the management API returns the same with `effective=true` on a policy GET.
+- **`increment-condition` moves the check.** With an `increment-condition` expression on `rate-limit-by-key` (for example to count only `200` responses), the gateway checks the counter at the end of `outbound`, after it knows the status code, so the 429 arrives one call later than you'd expect.
+- **Find the address the gateway sees before writing an `ip-filter` allow-list.** A public "what is my IP" service can report a different egress address than the one that reaches the gateway. Echo it from a temporary outbound statement, then use that value:
+
+  ```xml
+  <set-header name="x-seen-ip" exists-action="override">
+    <value>@(context.Request.IpAddress)</value>
+  </set-header>
+  ```
+
+  A `forbid` with the echoed address returned 403 within about 20 seconds of the save; `allow` with the documentation range locked everyone out just as fast.
+- **`Request-Context` can't be removed by policy.** The gateway (most likely its Application Insights logging) adds it after `outbound`; even the gateway's own 403 from `ip-filter` carries it. `Server` is dropped by the gateway without any policy.
+- **The `context` object.** `context.Request` (`Method`, `Url`, `Headers`, `Body`, `IpAddress`, `MatchedParameters`), `context.Response` (`StatusCode`, `Headers`, `Body`), `context.Subscription`, `context.Product`, `context.User`, `context.Api`, `context.Operation`, `context.Variables` (from `set-variable`), `context.RequestId`, `context.Elapsed`, `context.Deployment.Region`, and `context.LastError` in `on-error`.
 
 ## Rename the key header
 
@@ -156,8 +172,8 @@ Ingestion lags a few minutes behind the call, and the CLI only queries the last 
 
 | `apimSku` | Idle cost | Calls | First call after idle |
 |---|---|---|---|
-| `Consumption` (default) | $0 | first 1M/month free, then ~$3.50 per million | cold, see the article |
-| `BasicV2` | ~$150/month (one unit) | 10M included, then ~$3.00 per million | warm |
+| `Consumption` | $0 | first 1M/month free, then ~$3.50 per million | cold, see the article |
+| `BasicV2` (default) | ~$150/month (one unit) | 10M included, then ~$3.00 per million | warm |
 
 West Europe list prices, October 2026. Consumption can't be changed into a v2 tier in place; switching means a new instance. The Flex Consumption function app and the storage account cost cents at demo volume.
 

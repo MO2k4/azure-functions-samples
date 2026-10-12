@@ -1,0 +1,16 @@
+<policies>
+  <inbound>
+    <set-header name="x-correlation-id" exists-action="skip">
+      <value>@(context.RequestId.ToString())</value>
+    </set-header>
+  </inbound>
+  <backend>
+    <forward-request />
+  </backend>
+  <outbound>
+    <set-header name="x-correlation-id" exists-action="override">
+      <value>@(context.Request.Headers.GetValueOrDefault("x-correlation-id", ""))</value>
+    </set-header>
+  </outbound>
+  <on-error />
+</policies>

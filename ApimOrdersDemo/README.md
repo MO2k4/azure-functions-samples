@@ -11,13 +11,14 @@ ApimOrdersDemo/
   src/OrdersApi/         HTTP-triggered functions matching the spec, in-memory store
   infra/main.bicep       parameters, required tags, Log Analytics + Application Insights, wires the two modules
   infra/function.bicep   Flex Consumption app, storage (identity-based), the function key APIM uses
-  infra/apim.bicep       service, named value, backend, API import + policy, App Insights logger, product, subscription
+  infra/apim.bicep       service, named value, backend, API import, policies, App Insights logger, product, subscription
+  infra/policies/        one policy file per scope, loaded by apim.bicep with loadTextContent
   requests.http          401 without a key, 200 with one, header vs query
 ```
 
 ## Deploy
 
-The tested path is the Azure CLI one below (`az deployment group create` plus `func azure functionapp publish`); it was run end to end on 2026-10-02. `azd up` is wired up through `azure.yaml` and `main.parameters.json` but hasn't been run against this sample.
+The tested path is the Azure CLI one below (`az deployment group create` plus `func azure functionapp publish`); it was run end to end on 2026-10-02, and again with `apimSku=BasicV2` and the policies on 2026-10-12. `azd up` is wired up through `azure.yaml` and `main.parameters.json` but hasn't been run against this sample.
 
 ```bash
 cd ApimOrdersDemo
@@ -33,7 +34,7 @@ Without azd (tested):
 az group create -n rg-apim-orders -l westeurope
 az deployment group create -g rg-apim-orders -f infra/main.bicep \
   -p environmentName=apim-orders publisherEmail=you@example.com apimSku=Consumption
-func azure functionapp publish <FUNCTION_APP_NAME>   # run in src/OrdersApi
+func azure functionapp publish <FUNCTION_APP_NAME> --dotnet-isolated   # run in src/OrdersApi
 ```
 
 `infra/main.bicep` tags every resource with `cost-center`, `owner`, `environment` and `project`, because the subscription the sample was built on denies untagged resources. Change the `tags` parameter to fit your own policy.
@@ -59,6 +60,21 @@ az rest --method post --url "$SUB/regeneratePrimaryKey?api-version=2024-05-01"
 ```
 
 To cut a partner off, set the subscription's `state` to `cancelled` (`az rest --method patch --url "$SUB?api-version=2024-05-01" --body '{"properties":{"state":"cancelled"}}'`). In testing, the key got a 401 within five seconds. That only holds while no product with `subscriptionRequired: false` contains the API: an open product lets every call through, cancelled key or not.
+
+## Policies per scope
+
+Companion to Part 2, **Policies: The Heart of APIM**. Each scope gets its own file in `infra/policies/`:
+
+| File | Scope | What it does |
+|---|---|---|
+| `global.xml` | all APIs | sets `x-correlation-id` on the request and returns it on the response; `<forward-request />` in `backend` |
+| `product-orders-partners.xml` | product `orders-partners` | `rate-limit`: 10 calls per 60 seconds per subscription |
+| `api-orders.xml` | API `orders` | routes to the `orders-func` backend (which adds the function key), removes the subscription key header |
+| `operation-get-order.xml` | operation `get-order` | response cache for `GET /orders/{orderId}`, 30 seconds, per subscription |
+
+Every narrower file starts each section with `<base />`, which runs the broader scope's section at that spot. An operation policy without it skips the product rate limit and the backend route; through this sample the call then reaches the function without its key and gets a 401.
+
+The built-in cache doesn't exist on Consumption, so deploy with `apimSku=BasicV2` to see `cache-lookup` hit. Product policies only run for product-scoped subscriptions like `contoso-shop`: the built-in all-access subscription (the portal test console) skips the rate limit.
 
 ## Rename the key header
 

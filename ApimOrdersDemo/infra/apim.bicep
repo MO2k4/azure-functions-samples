@@ -1,5 +1,5 @@
-// API Management in front of the order function: OpenAPI import, managed identity toward the backend,
-// Entra ID token validation for callers, product and one subscription.
+// API Management in front of the order function: OpenAPI import, managed identity plus function key
+// toward the backend, Entra ID token validation for callers, product and one subscription.
 
 param location string
 param tags object
@@ -11,11 +11,17 @@ param apimSku string
 param publisherEmail string
 param functionBaseUrl string
 
+@secure()
+param functionKey string
+
 @description('Client ID of the app registration callers get tokens for (validate-azure-ad-token audience).')
 param ordersApiAppId string
 
 @description('Client ID of the backend app registration (authentication-managed-identity resource, Easy Auth audience).')
 param backendAppId string
+
+@description('Client ID of the only caller app validate-azure-ad-token accepts.')
+param testClientAppId string
 
 param appInsightsId string
 param appInsightsInstrumentationKey string
@@ -42,6 +48,7 @@ var policyNamedValues = {
   'tenant-id': tenant().tenantId
   'orders-api-app-id': ordersApiAppId
   'orders-backend-app-id': backendAppId
+  'orders-test-client-app-id': testClientAppId
 }
 
 resource namedValues 'Microsoft.ApiManagement/service/namedValues@2024-05-01' = [for nv in items(policyNamedValues): {
@@ -53,12 +60,27 @@ resource namedValues 'Microsoft.ApiManagement/service/namedValues@2024-05-01' = 
   }
 }]
 
+resource functionKeyValue 'Microsoft.ApiManagement/service/namedValues@2024-05-01' = {
+  parent: apim
+  name: 'orders-function-key'
+  properties: {
+    displayName: 'orders-function-key'
+    secret: true
+    value: functionKey
+  }
+}
+
 resource ordersBackend 'Microsoft.ApiManagement/service/backends@2024-05-01' = {
   parent: apim
   name: 'orders-func'
   properties: {
     url: functionBaseUrl
     protocol: 'http'
+    credentials: {
+      header: {
+        'x-functions-key': ['{{${functionKeyValue.name}}}']
+      }
+    }
   }
 }
 

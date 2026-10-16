@@ -28,8 +28,10 @@ resource ordersApiApp 'Microsoft.Graph/applications@v1.0' = {
   ]
 }
 
+// Only clients with an app role assignment (testClientRole below) can get a token for this API.
 resource ordersApiSp 'Microsoft.Graph/servicePrincipals@v1.0' = {
   appId: ordersApiApp.appId
+  appRoleAssignmentRequired: true
 }
 
 // A separate audience for the backend: a partner token for the gateway is useless against the function.

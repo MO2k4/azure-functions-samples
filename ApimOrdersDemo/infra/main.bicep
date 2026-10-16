@@ -87,7 +87,8 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' existing = {
 }
 
 // Easy Auth in front of the function: only tokens for the backend app registration, and only
-// from API Management's managed identity (oid claim). Everything else gets a 401 before the code runs.
+// from API Management's managed identity (oid claim). Requests without a token get a 401, tokens from
+// any other identity a 403, before the code runs.
 resource easyAuth 'Microsoft.Web/sites/config@2024-04-01' = {
   parent: functionApp
   name: 'authsettingsV2'

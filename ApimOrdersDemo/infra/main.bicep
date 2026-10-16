@@ -11,9 +11,6 @@ param apimSku string = 'BasicV2'
 
 param publisherEmail string
 
-@secure()
-param apimFunctionKey string = newGuid()
-
 // Every resource needs these four tags in the subscription this sample was built on;
 // a tag policy denies the deployment otherwise. Change the values to fit yours.
 param tags object = {
@@ -46,13 +43,19 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
+module entra 'entra.bicep' = {
+  name: 'entra'
+  params: {
+    resourceToken: resourceToken
+  }
+}
+
 module function 'function.bicep' = {
   name: 'function'
   params: {
     location: location
     tags: tags
     resourceToken: resourceToken
-    apimFunctionKey: apimFunctionKey
     appInsightsConnectionString: appInsights.properties.ConnectionString
   }
 }
@@ -66,9 +69,45 @@ module apim 'apim.bicep' = {
     apimSku: apimSku
     publisherEmail: publisherEmail
     functionBaseUrl: function.outputs.baseUrl
-    functionKey: apimFunctionKey
+    ordersApiAppId: entra.outputs.ordersApiAppId
+    backendAppId: entra.outputs.backendAppId
     appInsightsId: appInsights.id
     appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
+  }
+}
+
+resource functionApp 'Microsoft.Web/sites@2024-04-01' existing = {
+  name: 'func-orders-${resourceToken}'
+}
+
+// Easy Auth in front of the function: only tokens for the backend app registration, and only
+// from API Management's managed identity (oid claim). Everything else gets a 401 before the code runs.
+resource easyAuth 'Microsoft.Web/sites/config@2024-04-01' = {
+  parent: functionApp
+  name: 'authsettingsV2'
+  properties: {
+    platform: { enabled: true }
+    globalValidation: {
+      requireAuthentication: true
+      unauthenticatedClientAction: 'Return401'
+    }
+    identityProviders: {
+      azureActiveDirectory: {
+        enabled: true
+        registration: {
+          clientId: entra.outputs.backendAppId
+          openIdIssuer: '${environment().authentication.loginEndpoint}${tenant().tenantId}/v2.0'
+        }
+        validation: {
+          allowedAudiences: [entra.outputs.backendAppId]
+          defaultAuthorizationPolicy: {
+            allowedPrincipals: {
+              identities: [apim.outputs.principalId]
+            }
+          }
+        }
+      }
+    }
   }
 }
 
@@ -78,3 +117,7 @@ output APIM_NAME string = apim.outputs.name
 output APIM_GATEWAY_URL string = apim.outputs.gatewayUrl
 output APIM_SUBSCRIPTION_ID string = apim.outputs.subscriptionId
 output APPINSIGHTS_NAME string = appInsights.name
+output ORDERS_API_APP_ID string = entra.outputs.ordersApiAppId
+output BACKEND_APP_ID string = entra.outputs.backendAppId
+output TEST_CLIENT_APP_ID string = entra.outputs.testClientAppId
+output AZURE_TENANT_ID string = tenant().tenantId

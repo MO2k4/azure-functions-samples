@@ -4,10 +4,6 @@ param location string
 param tags object
 param resourceToken string
 
-@secure()
-@description('Value of the function key API Management sends as x-functions-key.')
-param apimFunctionKey string
-
 param appInsightsConnectionString string
 
 var storageBlobDataOwner = 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
@@ -92,18 +88,6 @@ resource blobOwner 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
     principalId: functionApp.identity.principalId
     principalType: 'ServicePrincipal'
   }
-}
-
-// A named key instead of listKeys(): API Management gets the value as a deployment input,
-// so it never has to read secrets back from the Functions host.
-#disable-next-line BCP081 // the Bicep type library has no schema for host keys; ARM accepts it
-resource apimKey 'Microsoft.Web/sites/host/functionKeys@2024-04-01' = {
-  name: '${functionApp.name}/default/apim'
-  properties: {
-    name: 'apim'
-    value: apimFunctionKey
-  }
-  dependsOn: [blobOwner]
 }
 
 output name string = functionApp.name

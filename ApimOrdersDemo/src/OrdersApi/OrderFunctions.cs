@@ -6,13 +6,14 @@ using FromBodyAttribute = Microsoft.Azure.Functions.Worker.Http.FromBodyAttribut
 
 namespace OrdersApi;
 
-// AuthorizationLevel.Anonymous: no function key. Easy Auth (infra/main.bicep) rejects every call
-// without a token from API Management's managed identity before it reaches this code.
+// Two layers while moving from keys to managed identity: Easy Auth (infra/main.bicep) rejects calls
+// without a token from API Management's identity, and AuthorizationLevel.Function still requires the
+// function key APIM sends. Drop the key once nothing else calls the function with it.
 public sealed class OrderFunctions(OrderStore store, ILogger<OrderFunctions> logger)
 {
     [Function("list-orders")]
     public IActionResult List(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "orders")] HttpRequest req)
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "orders")] HttpRequest req)
     {
         string? status = req.Query["status"];
         if (status is null)
@@ -26,7 +27,7 @@ public sealed class OrderFunctions(OrderStore store, ILogger<OrderFunctions> log
 
     [Function("get-order")]
     public IActionResult Get(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "orders/{orderId}")] HttpRequest req,
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "orders/{orderId}")] HttpRequest req,
         string orderId) =>
         store.Find(orderId) is { } order
             ? new OkObjectResult(order)
@@ -34,7 +35,7 @@ public sealed class OrderFunctions(OrderStore store, ILogger<OrderFunctions> log
 
     [Function("create-order")]
     public IActionResult Create(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "orders")] HttpRequest req,
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "orders")] HttpRequest req,
         [FromBody] CreateOrderRequest request)
     {
         var errors = request.Validate();

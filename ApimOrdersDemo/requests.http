@@ -50,3 +50,6 @@ Ocp-Apim-Subscription-Key: 00000000000000000000000000000000
 ### 8. Key without a token: 401 from validate-azure-ad-token
 GET {{gateway}}/orders
 Ocp-Apim-Subscription-Key: {{key}}
+
+### 9. Straight to the function, bypassing the gateway: 401 (no managed identity token, no function key)
+GET https://func-orders-xxxxxxxx.azurewebsites.net/api/orders

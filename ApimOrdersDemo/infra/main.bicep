@@ -11,6 +11,9 @@ param apimSku string = 'BasicV2'
 
 param publisherEmail string
 
+@secure()
+param apimFunctionKey string = newGuid()
+
 // Every resource needs these four tags in the subscription this sample was built on;
 // a tag policy denies the deployment otherwise. Change the values to fit yours.
 param tags object = {
@@ -56,6 +59,7 @@ module function 'function.bicep' = {
     location: location
     tags: tags
     resourceToken: resourceToken
+    apimFunctionKey: apimFunctionKey
     appInsightsConnectionString: appInsights.properties.ConnectionString
   }
 }
@@ -69,8 +73,10 @@ module apim 'apim.bicep' = {
     apimSku: apimSku
     publisherEmail: publisherEmail
     functionBaseUrl: function.outputs.baseUrl
+    functionKey: apimFunctionKey
     ordersApiAppId: entra.outputs.ordersApiAppId
     backendAppId: entra.outputs.backendAppId
+    testClientAppId: entra.outputs.testClientAppId
     appInsightsId: appInsights.id
     appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
   }

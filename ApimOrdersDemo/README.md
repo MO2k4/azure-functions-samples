@@ -2,7 +2,7 @@
 
 Companion sample for **Introduction to Azure API Management** (Azure API Management: From Gateway to APIOps, Part 1).
 
-An order API on Azure Functions (isolated worker, .NET 10, Flex Consumption) behind Azure API Management. APIM imports the API from a hand-written OpenAPI spec and only lets callers through with a key from the `orders-partners` product and an Entra ID token with the `Orders.ReadWrite` app role (Part 3). It calls the function with its managed identity; Easy Auth on the function rejects everything else.
+An order API on Azure Functions (isolated worker, .NET 10, Flex Consumption) behind Azure API Management. APIM imports the API from a hand-written OpenAPI spec and only lets callers through with a key from the `orders-partners` product and an Entra ID token with the `Orders.ReadWrite` app role (Part 3). It calls the function with its managed identity and the function key; Easy Auth and the key check on the function reject everything else.
 
 ```text
 ApimOrdersDemo/
@@ -11,7 +11,7 @@ ApimOrdersDemo/
   src/OrdersApi/         HTTP-triggered functions matching the spec, in-memory store
   infra/main.bicep       parameters, required tags, Log Analytics + Application Insights, wires the two modules
   infra/entra.bicep      app registrations (Microsoft Graph Bicep): orders API, function backend, test client
-  infra/function.bicep   Flex Consumption app, storage (identity-based)
+  infra/function.bicep   Flex Consumption app, storage (identity-based), the function key APIM sends
   infra/apim.bicep       service + managed identity, named values, backend, API import, policies, App Insights logger, product, subscription
   infra/policies/        one policy file per scope, loaded by apim.bicep with loadTextContent
   requests.http          401 without a key, 200 with one, header vs query
@@ -70,10 +70,10 @@ Companion to Part 2, **Policies: The Heart of APIM**. Each scope gets its own fi
 |---|---|---|
 | `global.xml` | all APIs | sets `x-correlation-id` on the request and returns it on the response; removes the `X-Powered-By` response header; `<forward-request />` in `backend` |
 | `product-orders-partners.xml` | product `orders-partners` | `rate-limit`: 10 calls per 60 seconds per subscription |
-| `api-orders.xml` | API `orders` | `ip-filter` (forbids a documentation range; swap in the ranges you want to block, or `action="allow"` for an allow-list), `validate-azure-ad-token` (audience = the orders API app, `roles` must contain `Orders.ReadWrite`), `authentication-managed-identity` toward the backend app, routes to the `orders-func` backend, removes the subscription key header, sends the subscription name as `x-partner`, and a `<choose>` that adds `rate-limit-by-key` (3 calls a minute per subscription) to `POST` only |
+| `api-orders.xml` | API `orders` | `ip-filter` (forbids a documentation range; swap in the ranges you want to block, or `action="allow"` for an allow-list), `validate-azure-ad-token` (audience = the orders API app, caller must be the test client app, `roles` must contain `Orders.ReadWrite`), `authentication-managed-identity` toward the backend app, routes to the `orders-func` backend, removes the subscription key header, sends the subscription name as `x-partner`, and a `<choose>` that adds `rate-limit-by-key` (3 calls a minute per subscription) to `POST` only |
 | `operation-get-order.xml` | operation `get-order` | response cache for `GET /orders/{orderId}`, 30 seconds, per subscription (keyed on `x-partner`; `vary-by-developer` would share one entry between subscriptions that have no owner) |
 
-Every narrower file starts each section with `<base />`, which runs the broader scope's section at that spot. An operation policy without it skips the product rate limit, the token check and the backend route; through this sample the call then reaches the function without a managed identity token and Easy Auth answers 401.
+Every narrower file starts each section with `<base />`, which runs the broader scope's section at that spot. An operation policy without it skips the product rate limit, the token check and the backend route; through this sample the call then reaches the function without a managed identity token or function key and gets a 401.
 
 **These policies need `apimSku=BasicV2` (the default) or higher.** `rate-limit-by-key` isn't available on Consumption: the deployment fails with `Policy is not allowed in 'Consumption' sku`. The cache statements save on Consumption, but that tier has no built-in cache; Learn points to an external Redis-compatible cache instead. To deploy on Consumption, remove the `<choose>` block from `api-orders.xml`. Product policies only run for product-scoped subscriptions like `contoso-shop`: the built-in all-access subscription (the portal test console) skips the rate limit.
 
@@ -99,12 +99,14 @@ Companion to Part 3, **JWT Validation and Managed Identity**. `azd up` now also 
 
 | App registration | Used as |
 |---|---|
-| `orders-api-<token>` | audience callers request tokens for (`ORDERS_API_APP_ID`); defines the `Orders.ReadWrite` app role; v2 tokens, so `aud` is the client ID |
+| `orders-api-<token>` | audience callers request tokens for (`ORDERS_API_APP_ID`); defines the `Orders.ReadWrite` app role; v2 tokens, so `aud` is the client ID; `appRoleAssignmentRequired`, so Entra only issues tokens to clients with a role assignment |
 | `orders-backend-<token>` | `resource` of `authentication-managed-identity` and the only audience Easy Auth accepts (`BACKEND_APP_ID`) |
-| `orders-test-client-<token>` | stands in for a partner service; has the `Orders.ReadWrite` role (`TEST_CLIENT_APP_ID`) |
+| `orders-test-client-<token>` | stands in for a partner service; has the `Orders.ReadWrite` role (`TEST_CLIENT_APP_ID`); the only app ID in the policy's `client-application-ids` (named value `orders-test-client-app-id`) |
 
 - APIM has a system-assigned identity. Its policy gets a token for the backend app and sends it as `Authorization: Bearer`, replacing the caller's token.
-- The function app has Easy Auth (`authsettingsV2` in `infra/main.bicep`): Microsoft provider, audience = backend app, `allowedPrincipals` = APIM's identity, `Return401` for everything else. The functions are `AuthorizationLevel.Anonymous`; there is no function key any more.
+- The function app has Easy Auth (`authsettingsV2` in `infra/main.bicep`): Microsoft provider, audience = backend app, `allowedPrincipals` = APIM's identity, `Return401` for everything else.
+- The function key stays as a second layer while you migrate: the functions are still `AuthorizationLevel.Function`, and the `orders-func` backend still sends `x-functions-key` from the secret named value `orders-function-key`. A call needs both the managed identity token and the key. Once nothing else calls the function with the key, switch the triggers to `Anonymous` and remove the key.
+- Each new partner app needs an `Orders.ReadWrite` role assignment (`appRoleAssignmentRequired` blocks tokens otherwise) and its client ID in `client-application-ids`. Pinning the IDs in the policy also rejects apps that got a role some other way.
 
 Graph Bicep can't create client secrets. Create one for the test client and get a token:
 
@@ -213,4 +215,4 @@ cp local.settings.json.example local.settings.json
 func start
 ```
 
-Locally the function key isn't checked, so `curl http://localhost:7071/api/orders` works without APIM.
+Locally neither the function key nor Easy Auth is checked, so `curl http://localhost:7071/api/orders` works without APIM.

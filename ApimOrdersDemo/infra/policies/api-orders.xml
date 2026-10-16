@@ -5,6 +5,9 @@
       <address-range from="203.0.113.0" to="203.0.113.255" />
     </ip-filter>
     <validate-azure-ad-token tenant-id="{{tenant-id}}">
+      <client-application-ids>
+        <application-id>{{orders-test-client-app-id}}</application-id>
+      </client-application-ids>
       <audiences>
         <audience>{{orders-api-app-id}}</audience>
       </audiences>

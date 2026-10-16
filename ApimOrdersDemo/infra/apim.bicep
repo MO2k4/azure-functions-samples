@@ -1,4 +1,5 @@
-// API Management in front of the order function: OpenAPI import, backend credential, product and one subscription.
+// API Management in front of the order function: OpenAPI import, managed identity toward the backend,
+// Entra ID token validation for callers, product and one subscription.
 
 param location string
 param tags object
@@ -10,8 +11,11 @@ param apimSku string
 param publisherEmail string
 param functionBaseUrl string
 
-@secure()
-param functionKey string
+@description('Client ID of the app registration callers get tokens for (validate-azure-ad-token audience).')
+param ordersApiAppId string
+
+@description('Client ID of the backend app registration (authentication-managed-identity resource, Easy Auth audience).')
+param backendAppId string
 
 param appInsightsId string
 param appInsightsInstrumentationKey string
@@ -24,21 +28,30 @@ resource apim 'Microsoft.ApiManagement/service@2024-05-01' = {
     name: apimSku
     capacity: apimSku == 'Consumption' ? 0 : 1
   }
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     publisherEmail: publisherEmail
     publisherName: 'Orders demo'
   }
 }
 
-resource functionKeyValue 'Microsoft.ApiManagement/service/namedValues@2024-05-01' = {
-  parent: apim
-  name: 'orders-function-key'
-  properties: {
-    displayName: 'orders-function-key'
-    secret: true
-    value: functionKey
-  }
+// Plain (non-secret) values the API policy reads as {{name}}: IDs, not credentials.
+var policyNamedValues = {
+  'tenant-id': tenant().tenantId
+  'orders-api-app-id': ordersApiAppId
+  'orders-backend-app-id': backendAppId
 }
+
+resource namedValues 'Microsoft.ApiManagement/service/namedValues@2024-05-01' = [for nv in items(policyNamedValues): {
+  parent: apim
+  name: nv.key
+  properties: {
+    displayName: nv.key
+    value: nv.value
+  }
+}]
 
 resource ordersBackend 'Microsoft.ApiManagement/service/backends@2024-05-01' = {
   parent: apim
@@ -46,11 +59,6 @@ resource ordersBackend 'Microsoft.ApiManagement/service/backends@2024-05-01' = {
   properties: {
     url: functionBaseUrl
     protocol: 'http'
-    credentials: {
-      header: {
-        'x-functions-key': ['{{${functionKeyValue.name}}}']
-      }
-    }
   }
 }
 
@@ -75,7 +83,7 @@ resource ordersApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2024-05-
     format: 'rawxml'
     value: loadTextContent('policies/api-orders.xml')
   }
-  dependsOn: [ordersBackend]
+  dependsOn: [ordersBackend, namedValues]
 }
 
 // One file per scope under infra/policies. Each narrower scope pulls in the broader one with <base />.
@@ -170,4 +178,5 @@ resource contosoShop 'Microsoft.ApiManagement/service/subscriptions@2024-05-01' 
 
 output name string = apim.name
 output gatewayUrl string = apim.properties.gatewayUrl
+output principalId string = apim.identity.principalId
 output subscriptionId string = contosoShop.name

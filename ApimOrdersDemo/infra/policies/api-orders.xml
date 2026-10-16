@@ -4,6 +4,17 @@
     <ip-filter action="forbid">
       <address-range from="203.0.113.0" to="203.0.113.255" />
     </ip-filter>
+    <validate-azure-ad-token tenant-id="{{tenant-id}}">
+      <audiences>
+        <audience>{{orders-api-app-id}}</audience>
+      </audiences>
+      <required-claims>
+        <claim name="roles" match="any">
+          <value>Orders.ReadWrite</value>
+        </claim>
+      </required-claims>
+    </validate-azure-ad-token>
+    <authentication-managed-identity resource="{{orders-backend-app-id}}" />
     <set-backend-service backend-id="orders-func" />
     <set-header name="Ocp-Apim-Subscription-Key" exists-action="delete" />
     <set-header name="x-partner" exists-action="override">

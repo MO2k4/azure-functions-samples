@@ -1,18 +1,22 @@
 # Fill these from `azd env get-values` (or the deployment outputs) and the key from the README.
 @gateway = https://apim-orders-xxxxxxxx.azure-api.net/sales
 @key = <primary key of the contoso-shop subscription>
+# Client-credentials token for ORDERS_API_APP_ID, see README "Entra ID and managed identity".
+@token = <access token>
 
 ### 1. No key: 401 from the gateway, the function never sees the call
 GET {{gateway}}/orders
 
-### 2. Key in the header: 200
+### 2. Key and token: 200
 GET {{gateway}}/orders
 Ocp-Apim-Subscription-Key: {{key}}
+Authorization: Bearer {{token}}
 
 ### 3. Place an order: 201 with a Location header
 # @name create
 POST {{gateway}}/orders
 Ocp-Apim-Subscription-Key: {{key}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -26,10 +30,12 @@ Content-Type: application/json
 ### 4. Read it back
 GET {{gateway}}/orders/{{create.response.body.$.orderId}}
 Ocp-Apim-Subscription-Key: {{key}}
+Authorization: Bearer {{token}}
 
 ### 5. Validation failure: 400 from the function, passed through by the gateway
 POST {{gateway}}/orders
 Ocp-Apim-Subscription-Key: {{key}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "customerId": "C-1001", "lines": [] }
@@ -40,3 +46,7 @@ GET {{gateway}}/orders?subscription-key={{key}}
 ### 7. Wrong key: 401
 GET {{gateway}}/orders
 Ocp-Apim-Subscription-Key: 00000000000000000000000000000000
+
+### 8. Key without a token: 401 from validate-azure-ad-token
+GET {{gateway}}/orders
+Ocp-Apim-Subscription-Key: {{key}}

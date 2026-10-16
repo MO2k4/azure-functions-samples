@@ -15,6 +15,7 @@ ApimOrdersDemo/
   infra/apim.bicep       service + managed identity, named values, backend, API import, policies, App Insights logger, product, subscription
   infra/policies/        one policy file per scope, loaded by apim.bicep with loadTextContent
   requests.http          401 without a key, 200 with one, header vs query
+  scripts/verify.sh      Part 3 checks against a deployment: token, audience, direct calls, ip-filter
 ```
 
 ## Deploy
@@ -116,6 +117,13 @@ CLIENT_SECRET=$(az ad app credential reset --id "$TEST_CLIENT_APP_ID" --display-
 curl -s "https://login.microsoftonline.com/$AZURE_TENANT_ID/oauth2/v2.0/token" \
   -d grant_type=client_credentials -d client_id="$TEST_CLIENT_APP_ID" \
   --data-urlencode client_secret="$CLIENT_SECRET" -d scope="$ORDERS_API_APP_ID/.default" | jq -r .access_token
+```
+
+To check the whole chain, run `scripts/verify.sh` with that secret. It sends a valid call, calls without a token, with the wrong audience, with a tampered signature and without a subscription key to the gateway, then calls the function directly without a token, with another app's token and with the partner's token, and prints status code and body start for each next to the code Learn documents. It also swaps the API policy for `validate-jwt` and `ip-filter` variants and restores `infra/policies/api-orders.xml` at the end, so don't run it against a shared instance. The script hasn't been run against a live deployment yet.
+
+```bash
+export CLIENT_SECRET
+scripts/verify.sh | tee verify.log
 ```
 
 `azd down` removes the Azure resources but not the app registrations; delete them with `az ad app delete --id <app id>`.

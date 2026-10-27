@@ -1,5 +1,6 @@
 // API Management in front of the order function: OpenAPI import, managed identity plus function key
-// toward the backend, Entra ID token validation for callers, product and one subscription.
+// toward the backend, Entra ID token validation for callers, two API versions in a version set, two
+// products (free and partners), one subscription, and the developer portal.
 
 param location string
 param tags object
@@ -40,15 +41,21 @@ resource apim 'Microsoft.ApiManagement/service@2024-05-01' = {
   properties: {
     publisherEmail: publisherEmail
     publisherName: 'Orders demo'
+    // v2 tiers create the instance with the portal off; Consumption has no portal at all.
+    developerPortalStatus: apimSku == 'Consumption' ? null : 'Enabled'
   }
 }
 
-// Plain (non-secret) values the API policy reads as {{name}}: IDs, not credentials.
+// The default portal host; add a custom portal domain here too, or the try-it console gets a CORS error there.
+var portalOrigin = 'https://${apim.name}.developer.azure-api.net'
+
+// Plain (non-secret) values the policies read as {{name}}: IDs and the portal origin, not credentials.
 var policyNamedValues = {
   'tenant-id': tenant().tenantId
   'orders-api-app-id': ordersApiAppId
   'orders-backend-app-id': backendAppId
   'orders-test-client-app-id': testClientAppId
+  'portal-origin': portalOrigin
 }
 
 resource namedValues 'Microsoft.ApiManagement/service/namedValues@2024-05-01' = [for nv in items(policyNamedValues): {
@@ -84,11 +91,24 @@ resource ordersBackend 'Microsoft.ApiManagement/service/backends@2024-05-01' = {
   }
 }
 
+// Path versioning (Segment in ARM), fixed for every version in the set by the first one.
+resource ordersVersionSet 'Microsoft.ApiManagement/service/apiVersionSets@2024-05-01' = {
+  parent: apim
+  name: 'orders'
+  properties: {
+    displayName: 'Orders API'
+    versioningScheme: 'Segment'
+  }
+}
+
+// The Original version: in the set, but no apiVersion, so existing callers keep /sales/orders.
+// Giving it apiVersion: 'v1' would move it to /sales/v1/orders and break every existing call.
 resource ordersApi 'Microsoft.ApiManagement/service/apis@2024-05-01' = {
   parent: apim
   name: 'orders'
   properties: {
     displayName: 'Orders API'
+    apiVersionSetId: ordersVersionSet.id
     path: 'sales'
     protocols: ['https']
     format: 'openapi'
@@ -108,6 +128,51 @@ resource ordersApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2024-05-
   dependsOn: [ordersBackend, namedValues]
 }
 
+// v2 breaks one contract: list-orders returns a page envelope. Same path, identifier in the URL: /sales/v2/orders.
+resource ordersApiV2 'Microsoft.ApiManagement/service/apis@2024-05-01' = {
+  parent: apim
+  name: 'orders-v2'
+  properties: {
+    displayName: 'Orders API'
+    apiVersionSetId: ordersVersionSet.id
+    apiVersion: 'v2'
+    apiVersionDescription: 'list-orders returns a page of orders ({ items, nextLink }) instead of an array.'
+    path: 'sales'
+    protocols: ['https']
+    format: 'openapi'
+    value: loadTextContent('../openapi/orders-v2.yaml')
+    serviceUrl: functionBaseUrl
+    subscriptionRequired: true
+  }
+  // Two APIs on one path only work inside a version set, so the Original has to join it first.
+  dependsOn: [ordersApi]
+}
+
+// Same token check, backend and limits as the Original: a new version shouldn't be a way around Part 3.
+resource ordersApiV2Policy 'Microsoft.ApiManagement/service/apis/policies@2024-05-01' = {
+  parent: ordersApiV2
+  name: 'policy'
+  properties: {
+    format: 'rawxml'
+    value: loadTextContent('policies/api-orders.xml')
+  }
+  dependsOn: [ordersBackend, namedValues]
+}
+
+resource listOrdersV2 'Microsoft.ApiManagement/service/apis/operations@2024-05-01' existing = {
+  parent: ordersApiV2
+  name: 'list-orders'
+}
+
+resource listOrdersV2Policy 'Microsoft.ApiManagement/service/apis/operations/policies@2024-05-01' = {
+  parent: listOrdersV2
+  name: 'policy'
+  properties: {
+    format: 'rawxml'
+    value: loadTextContent('policies/operation-list-orders-v2.xml')
+  }
+}
+
 // One file per scope under infra/policies. Each narrower scope pulls in the broader one with <base />.
 resource globalPolicy 'Microsoft.ApiManagement/service/policies@2024-05-01' = {
   parent: apim
@@ -116,6 +181,7 @@ resource globalPolicy 'Microsoft.ApiManagement/service/policies@2024-05-01' = {
     format: 'rawxml'
     value: loadTextContent('policies/global.xml')
   }
+  dependsOn: [namedValues]
 }
 
 resource getOrder 'Microsoft.ApiManagement/service/apis/operations@2024-05-01' existing = {
@@ -162,14 +228,15 @@ resource ordersApiDiagnostics 'Microsoft.ApiManagement/service/apis/diagnostics@
   }
 }
 
+// Partners: approval required, so a portal sign-up waits in `submitted` until someone approves it.
 resource partnerProduct 'Microsoft.ApiManagement/service/products@2024-05-01' = {
   parent: apim
   name: 'orders-partners'
   properties: {
     displayName: 'Orders for partners'
-    description: 'Order intake for partner shops. One subscription per partner.'
+    description: 'Order intake for partner shops. One subscription per partner, approved by the API team.'
     subscriptionRequired: true
-    approvalRequired: false
+    approvalRequired: true
     state: 'published'
   }
 }
@@ -183,9 +250,60 @@ resource partnerProductPolicy 'Microsoft.ApiManagement/service/products/policies
   }
 }
 
-resource partnerProductOrders 'Microsoft.ApiManagement/service/products/apis@2024-05-01' = {
+// Evaluation: auto-approved, one subscription per user account, low limits.
+resource freeProduct 'Microsoft.ApiManagement/service/products@2024-05-01' = {
+  parent: apim
+  name: 'orders-free'
+  properties: {
+    displayName: 'Orders (free)'
+    description: 'Try the order API: 5 calls a minute, 1,000 a week. Keys are issued right away.'
+    subscriptionRequired: true
+    approvalRequired: false
+    subscriptionsLimit: 1
+    state: 'published'
+  }
+}
+
+resource freeProductPolicy 'Microsoft.ApiManagement/service/products/policies@2024-05-01' = {
+  parent: freeProduct
+  name: 'policy'
+  properties: {
+    format: 'rawxml'
+    value: loadTextContent('policies/product-orders-free.xml')
+  }
+}
+
+// Every version is its own API, so each one goes into each product.
+var orderApiVersions = [ordersApi.name, ordersApiV2.name]
+
+resource partnerProductApis 'Microsoft.ApiManagement/service/products/apis@2024-05-01' = [for api in orderApiVersions: {
   parent: partnerProduct
-  name: ordersApi.name
+  name: api
+}]
+
+resource freeProductApis 'Microsoft.ApiManagement/service/products/apis@2024-05-01' = [for api in orderApiVersions: {
+  parent: freeProduct
+  name: api
+}]
+
+resource partnersGroup 'Microsoft.ApiManagement/service/groups@2024-05-01' = {
+  parent: apim
+  name: 'partners'
+  properties: {
+    displayName: 'Partners'
+    description: 'Partner developers who may see and request the partner product.'
+  }
+}
+
+// Visibility in the portal: signed-in developers see the free product, members of `partners` the partner one.
+resource freeProductDevelopers 'Microsoft.ApiManagement/service/products/groups@2024-05-01' = {
+  parent: freeProduct
+  name: 'developers'
+}
+
+resource partnerProductPartners 'Microsoft.ApiManagement/service/products/groups@2024-05-01' = {
+  parent: partnerProduct
+  name: partnersGroup.name
 }
 
 resource contosoShop 'Microsoft.ApiManagement/service/subscriptions@2024-05-01' = {

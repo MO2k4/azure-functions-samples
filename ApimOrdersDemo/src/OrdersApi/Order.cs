@@ -37,3 +37,6 @@ public sealed record Order(
     decimal Total,
     OrderStatus Status,
     DateTimeOffset CreatedAt);
+
+// Relative nextLink: it resolves against whatever URL the caller used, gateway or not.
+public sealed record OrderPage(IReadOnlyList<Order> Items, string? NextLink);

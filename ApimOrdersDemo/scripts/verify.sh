@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Sends the Part 3 security cases to a deployed ApimOrdersDemo and prints status code and body start
-# for each. Not yet run against a live deployment: the expected codes come from Microsoft Learn, and
+# Sends the Part 3 security cases and the Part 4 version, CORS and product cases to a deployed
+# ApimOrdersDemo and prints status code and body start for each. Not yet run against a live deployment: the expected codes come from Microsoft Learn, and
 # this script is how you find out what your deployment actually returns.
 #
 # The J* and I* cases temporarily replace the API policy of the `orders` API on the instance and
-# restore the committed infra/policies/api-orders.xml afterwards (also on error). Don't point it at a
+# restore the committed infra/policies/api-orders.xml afterwards (also on error). The P* cases create
+# two subscriptions (verify-free, verify-pending) and delete them at the end. Don't point it at a
 # shared instance.
 #
 # Needs: az (signed in), azd environment from `azd up`, curl, jq.
@@ -82,3 +83,39 @@ call "I1 ip-filter allow-list without the caller's address (expect 403)" -H "Ocp
 
 put_api_policy "$ORIG"; trap - EXIT
 call "R1 committed policy restored (expect 200)" -H "Ocp-Apim-Subscription-Key: $KEY" -H "Authorization: Bearer $GOOD" "$GW"
+
+# Part 4: versions, the portal's CORS preflight, products.
+PORTAL="https://$APIM_NAME.developer.azure-api.net"
+subscription() { # $1 name, $2 product, $3 state; prints the primary key
+  az rest --method put --url "$APIM_ARM/subscriptions/$1?api-version=2024-05-01" \
+    --body "{\"properties\":{\"displayName\":\"$1\",\"scope\":\"/products/$2\",\"state\":\"$3\"}}" -o none
+  az rest --method post --url "$APIM_ARM/subscriptions/$1/listSecrets?api-version=2024-05-01" --query primaryKey -o tsv
+}
+cleanup() {
+  for s in verify-free verify-pending; do
+    az rest --method delete --url "$APIM_ARM/subscriptions/$s?api-version=2024-05-01" -o none 2>/dev/null
+  done
+}
+trap cleanup EXIT
+
+call "P1 Original version still on the unversioned URL (expect 200, JSON array)" -H "Ocp-Apim-Subscription-Key: $KEY" -H "Authorization: Bearer $GOOD" "$GW"
+call "P2 v2 (expect 200, {\"items\":[...],\"nextLink\":...})" -H "Ocp-Apim-Subscription-Key: $KEY" -H "Authorization: Bearer $GOOD" "$APIM_GATEWAY_URL/sales/v2/orders"
+call "P3 unknown version identifier (status not documented)" -H "Ocp-Apim-Subscription-Key: $KEY" -H "Authorization: Bearer $GOOD" "$APIM_GATEWAY_URL/sales/v9/orders"
+
+printf '\n### P4 preflight from the portal origin, no key (expect 200 with Access-Control-Allow-Origin)\n'
+curl -s -o /dev/null -D - -X OPTIONS -H "Origin: $PORTAL" -H "Access-Control-Request-Method: GET" \
+  -H "Access-Control-Request-Headers: ocp-apim-subscription-key,authorization" "$GW" | grep -iE '^(HTTP|access-control)'
+printf '\n### P5 preflight from another origin (expect empty 200, no Access-Control-Allow-Origin)\n'
+curl -s -o /dev/null -D - -X OPTIONS -H "Origin: https://example.com" -H "Access-Control-Request-Method: GET" \
+  "$GW" | grep -iE '^(HTTP|access-control)'
+
+FREE_KEY=$(subscription verify-free orders-free active); sleep 10
+for i in 1 2 3 4 5 6; do
+  call "P6.$i free product key, call $i in a minute (expect 200 for 1-5, 429 on 6)" -H "Ocp-Apim-Subscription-Key: $FREE_KEY" -H "Authorization: Bearer $GOOD" "$GW"
+done
+
+PENDING_KEY=$(subscription verify-pending orders-partners submitted); sleep 10
+call "P7 partner subscription still submitted (expect 401)" -H "Ocp-Apim-Subscription-Key: $PENDING_KEY" -H "Authorization: Bearer $GOOD" "$GW"
+az rest --method patch --url "$APIM_ARM/subscriptions/verify-pending?api-version=2024-05-01" \
+  --body '{"properties":{"state":"active"}}' -o none; sleep 10
+call "P8 same key after approval (expect 200)" -H "Ocp-Apim-Subscription-Key: $PENDING_KEY" -H "Authorization: Bearer $GOOD" "$GW"

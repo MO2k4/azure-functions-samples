@@ -1,5 +1,19 @@
 <policies>
   <inbound>
+    <cors allow-credentials="false">
+      <allowed-origins>
+        <origin>{{portal-origin}}</origin>
+      </allowed-origins>
+      <allowed-methods preflight-result-max-age="300">
+        <method>*</method>
+      </allowed-methods>
+      <allowed-headers>
+        <header>*</header>
+      </allowed-headers>
+      <expose-headers>
+        <header>*</header>
+      </expose-headers>
+    </cors>
     <set-header name="x-correlation-id" exists-action="skip">
       <value>@(context.RequestId.ToString())</value>
     </set-header>

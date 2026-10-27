@@ -25,6 +25,32 @@ public sealed class OrderFunctions(OrderStore store, ILogger<OrderFunctions> log
                 new Dictionary<string, string[]> { ["status"] = [$"Unknown status '{status}'."] }));
     }
 
+    private const int PageSize = 50;
+
+    // The breaking change behind API version v2 (Part 4): a page envelope instead of a bare array.
+    [Function("list-orders-v2")]
+    public IActionResult ListV2(
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "v2/orders")] HttpRequest req)
+    {
+        string? status = req.Query["status"];
+        OrderStatus? filter = null;
+        if (status is not null)
+        {
+            if (!Enum.TryParse<OrderStatus>(status, ignoreCase: true, out var parsed))
+                return new BadRequestObjectResult(new ValidationProblemDetails(
+                    new Dictionary<string, string[]> { ["status"] = [$"Unknown status '{status}'."] }));
+            filter = parsed;
+        }
+
+        int skip = int.TryParse(req.Query["skip"], out var requested) && requested > 0 ? requested : 0;
+        var orders = store.List(filter);
+        var next = skip + PageSize < orders.Count
+            ? $"orders?skip={skip + PageSize}" + (filter is null ? "" : $"&status={filter}")
+            : null;
+
+        return new OkObjectResult(new OrderPage([.. orders.Skip(skip).Take(PageSize)], next));
+    }
+
     [Function("get-order")]
     public IActionResult Get(
         [HttpTrigger(AuthorizationLevel.Function, "get", Route = "orders/{orderId}")] HttpRequest req,

@@ -2,20 +2,21 @@
 
 Companion sample for **Introduction to Azure API Management** (Azure API Management: From Gateway to APIOps, Part 1).
 
-An order API on Azure Functions (isolated worker, .NET 10, Flex Consumption) behind Azure API Management. APIM imports the API from a hand-written OpenAPI spec and only lets callers through with a key from the `orders-partners` product and an Entra ID token with the `Orders.ReadWrite` app role (Part 3). It calls the function with its managed identity and the function key; Easy Auth and the key check on the function reject everything else.
+An order API on Azure Functions (isolated worker, .NET 10, Flex Consumption) behind Azure API Management. APIM imports the API from a hand-written OpenAPI spec and only lets callers through with a key from the `orders-partners` product and an Entra ID token with the `Orders.ReadWrite` app role (Part 3). It calls the function with its managed identity and the function key; Easy Auth and the key check on the function reject everything else. Part 4 adds a second API version, a free product next to the partner one, and the developer portal.
 
 ```text
 ApimOrdersDemo/
   azure.yaml             azd: one service, orders-api (host: function)
-  openapi/orders.yaml    the contract APIM imports (3 operations)
+  openapi/orders.yaml    the contract APIM imports (3 operations), the Original version
+  openapi/orders-v2.yaml version v2: list-orders returns a page envelope
   src/OrdersApi/         HTTP-triggered functions matching the spec, in-memory store
   infra/main.bicep       parameters, required tags, Log Analytics + Application Insights, wires the two modules
   infra/entra.bicep      app registrations (Microsoft Graph Bicep): orders API, function backend, test client
   infra/function.bicep   Flex Consumption app, storage (identity-based), the function key APIM sends
-  infra/apim.bicep       service + managed identity, named values, backend, API import, policies, App Insights logger, product, subscription
+  infra/apim.bicep       service + managed identity + developer portal, named values, backend, version set with two API versions, policies, App Insights logger, two products, partners group, subscription
   infra/policies/        one policy file per scope, loaded by apim.bicep with loadTextContent
-  requests.http          401 without a key, 200 with one, header vs query
-  scripts/verify.sh      Part 3 checks against a deployment: token, audience, direct calls, ip-filter
+  requests.http          401 without a key, 200 with one, header vs query, v2, the portal's preflight
+  scripts/verify.sh      Part 3 and 4 checks against a deployment: token, audience, direct calls, ip-filter, versions, CORS, products
 ```
 
 ## Deploy
@@ -69,9 +70,11 @@ Companion to Part 2, **Policies: The Heart of APIM**. Each scope gets its own fi
 
 | File | Scope | What it does |
 |---|---|---|
-| `global.xml` | all APIs | sets `x-correlation-id` on the request and returns it on the response; removes the `X-Powered-By` response header; `<forward-request />` in `backend` |
-| `product-orders-partners.xml` | product `orders-partners` | `rate-limit`: 10 calls per 60 seconds per subscription |
-| `api-orders.xml` | API `orders` | `ip-filter` (forbids a documentation range; swap in the ranges you want to block, or `action="allow"` for an allow-list), `validate-azure-ad-token` (audience = the orders API app, caller must be the test client app, `roles` must contain `Orders.ReadWrite`), `authentication-managed-identity` toward the backend app, routes to the `orders-func` backend, removes the subscription key header, sends the subscription name as `x-partner`, and a `<choose>` that adds `rate-limit-by-key` (3 calls a minute per subscription) to `POST` only |
+| `global.xml` | all APIs | `cors` for the developer portal origin (named value `portal-origin`, Part 4); sets `x-correlation-id` on the request and returns it on the response; removes the `X-Powered-By` response header; `<forward-request />` in `backend` |
+| `product-orders-partners.xml` | product `orders-partners` | `rate-limit`: 60 calls per 60 seconds per subscription |
+| `product-orders-free.xml` | product `orders-free` | `rate-limit`: 5 calls per 60 seconds, `quota`: 1,000 calls per week, both per subscription (Part 4) |
+| `api-orders.xml` | APIs `orders` and `orders-v2` | `ip-filter` (forbids a documentation range; swap in the ranges you want to block, or `action="allow"` for an allow-list), `validate-azure-ad-token` (audience = the orders API app, caller must be the test client app, `roles` must contain `Orders.ReadWrite`), `authentication-managed-identity` toward the backend app, routes to the `orders-func` backend, removes the subscription key header, sends the subscription name as `x-partner`, and a `<choose>` that adds `rate-limit-by-key` (3 calls a minute per subscription) to `POST` only |
+| `operation-list-orders-v2.xml` | operation `list-orders` of API `orders-v2` | `rewrite-uri` to the function's `v2/orders` route; query parameters are copied |
 | `operation-get-order.xml` | operation `get-order` | response cache for `GET /orders/{orderId}`, 30 seconds, per subscription (keyed on `x-partner`; `vary-by-developer` would share one entry between subscriptions that have no owner) |
 
 Every narrower file starts each section with `<base />`, which runs the broader scope's section at that spot. An operation policy without it skips the product rate limit, the token check and the backend route; through this sample the call then reaches the function without a managed identity token or function key and gets a 401.
@@ -127,6 +130,43 @@ scripts/verify.sh | tee verify.log
 ```
 
 `azd down` removes the Azure resources but not the app registrations; delete them with `az ad app delete --id <app id>`.
+
+## Developer portal, versions and products
+
+Companion to Part 4, **Developer Portal and API Versioning**. Not deployed yet: the Bicep and the function project build clean, and the checks below are a runbook.
+
+**Versions.** `infra/apim.bicep` puts both APIs into the version set `orders` with the path scheme (`versioningScheme: 'Segment'`):
+
+| API | `apiVersion` | URL | `list-orders` returns |
+|---|---|---|---|
+| `orders` (Original) | none | `/sales/orders` | an array of orders |
+| `orders-v2` | `v2` | `/sales/v2/orders` | `{ "items": [...], "nextLink": "orders?skip=50" }` |
+
+`orders` stays the Original so existing callers keep their URL. Learn describes that shape for the portal's "add a version" flow; it doesn't show the ARM form, so check after the first deploy that `/sales/orders` still answers (`verify.sh` case P1). If ARM insists on an identifier, the fallback is `apiVersion: 'v1'`, which moves every existing call to `/sales/v1/orders`. Both versions share `api-orders.xml` (token check, backend, `POST` limit); v2's `list-orders` has an operation policy that rewrites to the function's `v2/orders` route. The `get-order` cache and the Application Insights diagnostics are only on the Original.
+
+**Products.** Both products contain both versions, because each version is its own API.
+
+| Product | Approval | Subscriptions per user | Limits | Visible to |
+|---|---|---|---|---|
+| `orders-free` | auto-approved | 1 | 5 calls/minute, 1,000 calls/week | Developers (signed-in users) |
+| `orders-partners` | required | unlimited | 60 calls/minute | group `partners` |
+
+`contoso-shop` was created with `state: 'active'`, so switching `orders-partners` to `approvalRequired: true` doesn't touch it; only new requests wait for approval.
+
+**Portal.** `developerPortalStatus: 'Enabled'` turns the managed portal on (v2 tiers create the instance with it off). It lives at `https://<APIM_NAME>.developer.azure-api.net`. Publishing it the first time is manual: Azure portal > the instance > Developer portal > Portal overview, open the portal as administrator, then **Publish**. The global policy allows the portal origin in `cors`, so the try-it console's preflight gets an answer. The console still can't call the API with a key alone, because both versions require an Entra token; that needs OAuth 2.0 user authorization configured for the console, which needs an app registration and isn't part of the sample.
+
+**Approve a partner.** Add a developer to the `partners` group (Azure portal > Users, or let them sign up in the portal and add them afterwards), let them request **Orders for partners** in the portal, then find and approve the subscription:
+
+```bash
+APIM=https://management.azure.com/subscriptions/<azure-subscription-id>/resourceGroups/<rg>/providers/Microsoft.ApiManagement/service/<APIM_NAME>
+az rest --method get --url "$APIM/subscriptions?api-version=2024-05-01&\$filter=properties/state eq 'submitted'" \
+  --query "value[].{name:name, scope:properties.scope, owner:properties.ownerId}" -o table
+az rest --method patch --url "$APIM/subscriptions/<name>?api-version=2024-05-01" --body '{"properties":{"state":"active"}}'
+```
+
+Who gets the approval email is the **Subscription requests (requiring approval)** notification (Azure portal > the instance > Notifications).
+
+`verify.sh` cases P1 to P8 cover the Original URL, v2's envelope, an unknown version, the portal origin's preflight, the free product's rate limit, and a partner subscription before and after approval.
 
 ## Rename the key header
 

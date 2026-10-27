@@ -11,10 +11,12 @@ paths:
     get:
       operationId: list-orders
       summary: List orders
+      description: Returns all orders, newest first. Filter with `status`.
       parameters:
         - name: status
           in: query
           required: false
+          description: Only orders in this status.
           schema:
             $ref: '#/components/schemas/OrderStatus'
       responses:
@@ -29,6 +31,7 @@ paths:
     post:
       operationId: create-order
       summary: Place an order
+      description: Validates the lines and stores the order as `Pending`. The total is calculated server-side.
       requestBody:
         required: true
         content:

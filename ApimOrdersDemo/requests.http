@@ -53,3 +53,14 @@ Ocp-Apim-Subscription-Key: {{key}}
 
 ### 9. Straight to the function, bypassing the gateway: 401 (no managed identity token, no function key)
 GET https://func-orders-xxxxxxxx.azurewebsites.net/api/orders
+
+### 10. Version v2: same key, same token, a page envelope { items, nextLink } instead of an array
+GET {{gateway}}/v2/orders
+Ocp-Apim-Subscription-Key: {{key}}
+Authorization: Bearer {{token}}
+
+### 11. The preflight the portal's try-it console sends: 200 with Access-Control-Allow-Origin, no key needed
+OPTIONS {{gateway}}/orders
+Origin: https://apim-orders-xxxxxxxx.developer.azure-api.net
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: ocp-apim-subscription-key,authorization

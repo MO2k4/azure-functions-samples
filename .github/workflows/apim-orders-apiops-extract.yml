@@ -1,7 +1,10 @@
 name: ApimOrdersDemo APIOps extract
 
 # Pulls the API surface from a live instance and opens a PR, so portal edits land in review instead of being lost.
+# Nightly runs extract from dev, the environment the artifacts describe; prod is extracted on demand.
 on:
+  schedule:
+    - cron: '17 3 * * *'
   workflow_dispatch:
     inputs:
       environment:
@@ -9,6 +12,11 @@ on:
         type: choice
         options: [dev, prod]
         default: dev
+
+# One run per environment at a time: both would push to the same PR branch.
+concurrency:
+  group: apiops-extract-${{ inputs.environment || 'dev' }}
+  cancel-in-progress: false
 
 permissions:
   id-token: write
@@ -21,7 +29,7 @@ env:
 jobs:
   extract:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    environment: ${{ inputs.environment || 'dev' }}
     defaults:
       run:
         working-directory: ApimOrdersDemo/apiops
@@ -51,8 +59,8 @@ jobs:
       - uses: peter-evans/create-pull-request@v7
         with:
           add-paths: ApimOrdersDemo/apiops/apim-artifacts
-          branch: apiops-extract/${{ inputs.environment }}
-          commit-message: 'ApimOrdersDemo: extract API surface from ${{ inputs.environment }}'
-          title: 'APIOps extract from ${{ inputs.environment }}'
+          branch: apiops-extract/${{ inputs.environment || 'dev' }}
+          commit-message: "ApimOrdersDemo: extract API surface from ${{ inputs.environment || 'dev' }}"
+          title: "APIOps extract from ${{ inputs.environment || 'dev' }}"
           body: Changes made on the instance outside Git. Review them like any other API change before merging.
           labels: extract

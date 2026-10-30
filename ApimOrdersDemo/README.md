@@ -12,7 +12,8 @@ ApimOrdersDemo/
   infra/entra.bicep      app registrations (Microsoft Graph Bicep): orders API, function backend, test client
   infra/function.bicep   Flex Consumption app, storage (identity-based), the function key APIM sends
   infra/apim.bicep       service + managed identity + developer portal, named values, backend, version set with two API versions, policies, App Insights logger, two products, partners group, subscription
-  infra/policies/        the global policy (platform-owned)
+  infra/policies/        the global policy (platform-owned), plus mirrors of the Part 2 to 4 policy files
+  openapi/               mirrors of the two specs for links in Parts 1 to 4
   apiops/                APIOps (Part 5): the API surface as artifacts (specs, API/operation/product policies), extract filter, prod overrides
   requests.http          401 without a key, 200 with one, header vs query, v2, the portal's preflight
   scripts/verify.sh      Part 3 and 4 checks against a deployment: token, audience, direct calls, ip-filter, versions, CORS, products
@@ -65,7 +66,9 @@ To cut a partner off, set the subscription's `state` to `cancelled` (`az rest --
 
 ## Policies per scope
 
-Companion to Part 2, **Policies: The Heart of APIM**. Each scope gets its own `policy.xml`. Since Part 5 only the global one is in `infra/policies/`; the others live in the APIOps artifact tree (`apiops/apim-artifacts/`), where both `apim.bicep` and `apiops publish` read them:
+Companion to Part 2, **Policies: The Heart of APIM**. Each scope gets its own `policy.xml`. Since Part 5 only the global one deploys from `infra/policies/`; the others live in the APIOps artifact tree (`apiops/apim-artifacts/`), where both `apim.bicep` and `apiops publish` read them.
+
+The artifact tree is authoritative. `infra/policies/api-orders.xml`, `operation-*.xml`, `product-*.xml` and `openapi/*.yaml` are mirrors at the old paths, kept so links in Parts 1 to 4 still resolve; nothing deploys from them, and `MIRRORS_ONLY=1 scripts/verify.sh` reports any that drift. The files per scope:
 
 | File | Scope | What it does |
 |---|---|---|
@@ -178,7 +181,7 @@ Companion to Part 5, **APIOps for Azure API Management**. Build-only: nothing ha
 | Bicep (`infra/`) | service, managed identity, named values and the `orders-function-key` secret, backend `orders-func`, global policy, logger and the `orders` API diagnostics, group `partners`, subscription `contoso-shop` |
 | APIOps (`apiops/apim-artifacts/`) | version set `orders`, APIs `orders` and `orders-v2` with their specs, API and operation policies, products `orders-free` and `orders-partners` with their policies and API/group links |
 
-`apim.bicep` reads the specs and policies from `apiops/apim-artifacts/`, so there is one copy either way. The `apiSurfaceOwner` parameter decides who deploys them: `bicep` (default, Parts 1 to 4) or `apiops`, where Bicep skips the API surface and `apiops publish` deploys it:
+`apim.bicep` reads the specs and policies from `apiops/apim-artifacts/`, so there is one deployable copy either way (the files at the old paths are mirrors, see "Policies per scope"). The `apiSurfaceOwner` parameter decides who deploys them: `bicep` (default, Parts 1 to 4) or `apiops`, where Bicep skips the API surface and `apiops publish` deploys it:
 
 ```bash
 azd env set APIM_API_SURFACE_OWNER apiops

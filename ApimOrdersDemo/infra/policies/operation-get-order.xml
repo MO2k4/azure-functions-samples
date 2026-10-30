@@ -1,0 +1,18 @@
+<policies>
+  <inbound>
+    <base />
+    <cache-lookup vary-by-developer="false" vary-by-developer-groups="false">
+      <vary-by-header>x-partner</vary-by-header>
+    </cache-lookup>
+  </inbound>
+  <backend>
+    <base />
+  </backend>
+  <outbound>
+    <base />
+    <cache-store duration="30" />
+  </outbound>
+  <on-error>
+    <base />
+  </on-error>
+</policies>

@@ -13,9 +13,27 @@
 #        EXPIRED_TOKEN     optional, a gateway token saved more than ~75 minutes ago (case V9)
 #        APIM_SUBSCRIPTION optional, APIM subscription to take the key from (default: contoso-shop)
 #        APIOPS            optional, 1 runs the Part 5 A* cases (read-only: extract to a temp folder, dry-run publish)
+#        MIRRORS_ONLY      optional, 1 stops after the offline M0 mirror check (no azd, az or secret needed)
 # Usage: CLIENT_SECRET=... scripts/verify.sh [path-to-ApimOrdersDemo] | tee verify.log
 set -uo pipefail
 cd "${1:-$(dirname "$0")/..}"
+
+# M0 runs offline: the pre-Part 5 paths are mirrors of apiops/apim-artifacts kept for links in Parts 1 to 4.
+A=apiops/apim-artifacts; drift=0
+while read -r mirror artifact; do
+  cmp -s "$mirror" "$artifact" || { echo "M0 mirror drift: $mirror differs from $artifact"; drift=1; }
+done <<EOF
+infra/policies/api-orders.xml $A/apis/orders/policy.xml
+infra/policies/api-orders.xml $A/apis/orders-v2/policy.xml
+infra/policies/operation-get-order.xml $A/apis/orders/operations/get-order/policy.xml
+infra/policies/operation-list-orders-v2.xml $A/apis/orders-v2/operations/list-orders/policy.xml
+infra/policies/product-orders-free.xml $A/products/orders-free/policy.xml
+infra/policies/product-orders-partners.xml $A/products/orders-partners/policy.xml
+openapi/orders.yaml $A/apis/orders/specification.yaml
+openapi/orders-v2.yaml $A/apis/orders-v2/specification.yaml
+EOF
+[ "${MIRRORS_ONLY:-0}" = 1 ] && exit $drift
+
 eval "$(azd env get-values)"
 : "${CLIENT_SECRET:?set CLIENT_SECRET}"
 RG=${AZURE_RESOURCE_GROUP:-rg-$AZURE_ENV_NAME}

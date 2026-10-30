@@ -1,0 +1,42 @@
+<policies>
+  <inbound>
+    <base />
+    <ip-filter action="forbid">
+      <address-range from="203.0.113.0" to="203.0.113.255" />
+    </ip-filter>
+    <validate-azure-ad-token tenant-id="{{tenant-id}}">
+      <client-application-ids>
+        <application-id>{{orders-test-client-app-id}}</application-id>
+      </client-application-ids>
+      <audiences>
+        <audience>{{orders-api-app-id}}</audience>
+      </audiences>
+      <required-claims>
+        <claim name="roles" match="any">
+          <value>Orders.ReadWrite</value>
+        </claim>
+      </required-claims>
+    </validate-azure-ad-token>
+    <authentication-managed-identity resource="{{orders-backend-app-id}}" />
+    <set-backend-service backend-id="orders-func" />
+    <set-header name="Ocp-Apim-Subscription-Key" exists-action="delete" />
+    <set-header name="x-partner" exists-action="override">
+      <value>@(context.Subscription?.Id ?? "none")</value>
+    </set-header>
+    <choose>
+      <when condition="@(context.Request.Method == "POST")">
+        <rate-limit-by-key calls="3" renewal-period="60"
+            counter-key="@("create-order:" + context.Subscription.Id)" />
+      </when>
+    </choose>
+  </inbound>
+  <backend>
+    <base />
+  </backend>
+  <outbound>
+    <base />
+  </outbound>
+  <on-error>
+    <base />
+  </on-error>
+</policies>

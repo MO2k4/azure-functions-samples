@@ -1,0 +1,11 @@
+{
+  "properties": {
+    "displayName": "Orders API",
+    "apiVersionSetId": "/apiVersionSets/orders",
+    "apiVersion": "v2",
+    "apiVersionDescription": "list-orders returns a page of orders ({ items, nextLink }) instead of an array.",
+    "path": "sales",
+    "protocols": ["https"],
+    "subscriptionRequired": true
+  }
+}

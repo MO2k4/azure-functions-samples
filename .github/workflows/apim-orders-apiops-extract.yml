@@ -1,0 +1,58 @@
+name: ApimOrdersDemo APIOps extract
+
+# Pulls the API surface from a live instance and opens a PR, so portal edits land in review instead of being lost.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Instance to extract from
+        type: choice
+        options: [dev, prod]
+        default: dev
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+
+env:
+  APIOPS_CLI: '@azure-tools/apiops-cli@1.0.5'
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    defaults:
+      run:
+        working-directory: ApimOrdersDemo/apiops
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - run: >
+          npx --yes "$APIOPS_CLI" extract
+          --subscription-id ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          --resource-group ${{ vars.APIM_RESOURCE_GROUP }}
+          --service-name ${{ vars.APIM_SERVICE_NAME }}
+          --filter configuration.extractor.yaml
+          --no-transitive
+          --remove-stale
+          --output apim-artifacts
+
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          add-paths: ApimOrdersDemo/apiops/apim-artifacts
+          branch: apiops-extract/${{ inputs.environment }}
+          commit-message: 'ApimOrdersDemo: extract API surface from ${{ inputs.environment }}'
+          title: 'APIOps extract from ${{ inputs.environment }}'
+          body: Changes made on the instance outside Git. Review them like any other API change before merging.
+          labels: extract

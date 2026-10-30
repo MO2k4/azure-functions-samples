@@ -1,0 +1,9 @@
+{
+  "properties": {
+    "displayName": "Orders for partners",
+    "description": "Order intake for partner shops. One subscription per partner, approved by the API team.",
+    "subscriptionRequired": true,
+    "approvalRequired": true,
+    "state": "published"
+  }
+}

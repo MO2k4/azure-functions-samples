@@ -1,0 +1,122 @@
+name: ApimOrdersDemo APIOps publish
+
+on:
+  pull_request:
+    paths: ['ApimOrdersDemo/apiops/**']
+  push:
+    branches: [main]
+    paths: ['ApimOrdersDemo/apiops/**']
+
+permissions:
+  id-token: write
+  contents: read
+
+# --commit-id diffs that commit against its parent. On a PR that is the merge commit against the base
+# branch; on main it is the merged commit, so merge or squash PRs (a rebase merge only publishes the last commit).
+# Never add --delete-unmatched here: Bicep owns the rest of the instance, and that flag would delete it.
+env:
+  APIOPS_CLI: '@azure-tools/apiops-cli@1.0.5'
+
+jobs:
+  dry-run:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    environment: dev
+    defaults:
+      run:
+        working-directory: ApimOrdersDemo/apiops
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - run: >
+          npx --yes "$APIOPS_CLI" publish
+          --subscription-id ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          --resource-group ${{ vars.APIM_RESOURCE_GROUP }}
+          --service-name ${{ vars.APIM_SERVICE_NAME }}
+          --source apim-artifacts
+          --commit-id ${{ github.sha }}
+          --dry-run
+
+  publish-dev:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: dev
+    defaults:
+      run:
+        working-directory: ApimOrdersDemo/apiops
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - run: >
+          npx --yes "$APIOPS_CLI" publish
+          --subscription-id ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          --resource-group ${{ vars.APIM_RESOURCE_GROUP }}
+          --service-name ${{ vars.APIM_SERVICE_NAME }}
+          --source apim-artifacts
+          --commit-id ${{ github.sha }}
+
+  # The prod environment has required reviewers, so this job waits for an approval after dev succeeded.
+  publish-prod:
+    needs: publish-dev
+    runs-on: ubuntu-latest
+    environment: prod
+    defaults:
+      run:
+        working-directory: ApimOrdersDemo/apiops
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - run: >
+          npx --yes "$APIOPS_CLI" publish
+          --subscription-id ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          --resource-group ${{ vars.APIM_RESOURCE_GROUP }}
+          --service-name ${{ vars.APIM_SERVICE_NAME }}
+          --source apim-artifacts
+          --overrides configuration.prod.yaml
+          --commit-id ${{ github.sha }}
+          --dry-run
+
+      - run: >
+          npx --yes "$APIOPS_CLI" publish
+          --subscription-id ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          --resource-group ${{ vars.APIM_RESOURCE_GROUP }}
+          --service-name ${{ vars.APIM_SERVICE_NAME }}
+          --source apim-artifacts
+          --overrides configuration.prod.yaml
+          --commit-id ${{ github.sha }}

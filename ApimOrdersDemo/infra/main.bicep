@@ -14,6 +14,10 @@ param publisherEmail string
 @secure()
 param apimFunctionKey string = newGuid()
 
+@description('Who deploys the API surface (version set, APIs, products): Bicep, or `apiops publish` (Part 5).')
+@allowed(['bicep', 'apiops'])
+param apiSurfaceOwner string = 'bicep'
+
 // Every resource needs these four tags in the subscription this sample was built on;
 // a tag policy denies the deployment otherwise. Change the values to fit yours.
 param tags object = {
@@ -79,6 +83,7 @@ module apim 'apim.bicep' = {
     testClientAppId: entra.outputs.testClientAppId
     appInsightsId: appInsights.id
     appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
+    apiSurfaceOwner: apiSurfaceOwner
   }
 }
 

@@ -4,14 +4,15 @@
 # this script is how you find out what your deployment actually returns.
 #
 # The J* and I* cases temporarily replace the API policy of the `orders` API on the instance and
-# restore the committed infra/policies/api-orders.xml afterwards (also on error). The P* cases create
+# restore the committed apiops/apim-artifacts/apis/orders/policy.xml afterwards (also on error). The P* cases create
 # two subscriptions (verify-free, verify-pending) and delete them at the end. Don't point it at a
 # shared instance.
 #
-# Needs: az (signed in), azd environment from `azd up`, curl, jq.
+# Needs: az (signed in), azd environment from `azd up`, curl, jq; Node.js 22+ for APIOPS=1.
 # Env:   CLIENT_SECRET     secret of the test client app (README, "Entra ID and managed identity")
 #        EXPIRED_TOKEN     optional, a gateway token saved more than ~75 minutes ago (case V9)
 #        APIM_SUBSCRIPTION optional, APIM subscription to take the key from (default: contoso-shop)
+#        APIOPS            optional, 1 runs the Part 5 A* cases (read-only: extract to a temp folder, dry-run publish)
 # Usage: CLIENT_SECRET=... scripts/verify.sh [path-to-ApimOrdersDemo] | tee verify.log
 set -uo pipefail
 cd "${1:-$(dirname "$0")/..}"
@@ -61,7 +62,7 @@ call "V7 function directly, right audience, not APIM's identity (expect 403)" -H
 call "V8 function directly, partner token for the gateway (status not documented)" -H "Authorization: Bearer $GOOD" "$FN"
 [ -n "${EXPIRED_TOKEN:-}" ] && call "V9 expired token (expect 401)" -H "Ocp-Apim-Subscription-Key: $KEY" -H "Authorization: Bearer $EXPIRED_TOKEN" "$GW"
 
-ORIG="$WORK/api-orders.xml"; cp infra/policies/api-orders.xml "$ORIG"
+ORIG="$WORK/api-orders.xml"; cp apiops/apim-artifacts/apis/orders/policy.xml "$ORIG"
 trap 'put_api_policy "$ORIG"' EXIT
 TID=$AZURE_TENANT_ID
 jwt_variant() { # $1 = expected issuer; the caller allowlist becomes a required azp claim
@@ -119,3 +120,14 @@ call "P7 partner subscription still submitted (expect 401)" -H "Ocp-Apim-Subscri
 az rest --method patch --url "$APIM_ARM/subscriptions/verify-pending?api-version=2024-05-01" \
   --body '{"properties":{"state":"active"}}' -o none; sleep 10
 call "P8 same key after approval (expect 200)" -H "Ocp-Apim-Subscription-Key: $PENDING_KEY" -H "Authorization: Bearer $GOOD" "$GW"
+
+# Part 5: APIOps. Writes nothing to the instance: the extract goes to a temp folder and the publish is a dry run.
+if [ "${APIOPS:-0}" = 1 ]; then
+  apiops() { npx --yes @azure-tools/apiops-cli@1.0.5 "$@" --subscription-id "$SUB_ID" --resource-group "$RG" --service-name "$APIM_NAME"; }
+  printf '\n### A1 extract the API surface with the committed filter (expect exit 0; 1 = partial, 2 = fatal)\n'
+  apiops extract --filter apiops/configuration.extractor.yaml --no-transitive --output "$WORK/extracted"; echo "exit $?"
+  printf '\n### A2 instance vs. committed artifacts (expect no backends/, namedValues/, diagnostics/ or root policy.xml)\n'
+  diff -rq apiops/apim-artifacts "$WORK/extracted"
+  printf '\n### A3 full dry-run publish of the committed artifacts (expect no deletes)\n'
+  apiops publish --source apiops/apim-artifacts --dry-run; echo "exit $?"
+fi

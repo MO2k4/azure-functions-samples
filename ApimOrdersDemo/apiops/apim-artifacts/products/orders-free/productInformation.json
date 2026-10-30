@@ -1,0 +1,10 @@
+{
+  "properties": {
+    "displayName": "Orders (free)",
+    "description": "Try the order API: 5 calls a minute, 1,000 a week. Keys are issued right away.",
+    "subscriptionRequired": true,
+    "approvalRequired": false,
+    "subscriptionsLimit": 1,
+    "state": "published"
+  }
+}

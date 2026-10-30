@@ -27,6 +27,13 @@ param testClientAppId string
 param appInsightsId string
 param appInsightsInstrumentationKey string
 
+// Part 5: with 'apiops', the version set, both APIs with their policies, and both products with their
+// policies and links come from `apiops publish` instead. Bicep keeps the platform either way.
+@allowed(['bicep', 'apiops'])
+param apiSurfaceOwner string = 'bicep'
+
+var bicepOwnsApiSurface = apiSurfaceOwner == 'bicep'
+
 resource apim 'Microsoft.ApiManagement/service@2024-05-01' = {
   name: 'apim-orders-${resourceToken}'
   location: location
@@ -92,7 +99,7 @@ resource ordersBackend 'Microsoft.ApiManagement/service/backends@2024-05-01' = {
 }
 
 // Path versioning (Segment in ARM), fixed for every version in the set by the first one.
-resource ordersVersionSet 'Microsoft.ApiManagement/service/apiVersionSets@2024-05-01' = {
+resource ordersVersionSet 'Microsoft.ApiManagement/service/apiVersionSets@2024-05-01' = if (bicepOwnsApiSurface) {
   parent: apim
   name: 'orders'
   properties: {
@@ -103,7 +110,7 @@ resource ordersVersionSet 'Microsoft.ApiManagement/service/apiVersionSets@2024-0
 
 // The Original version: in the set, but no apiVersion, so existing callers keep /sales/orders.
 // Giving it apiVersion: 'v1' would move it to /sales/v1/orders and break every existing call.
-resource ordersApi 'Microsoft.ApiManagement/service/apis@2024-05-01' = {
+resource ordersApi 'Microsoft.ApiManagement/service/apis@2024-05-01' = if (bicepOwnsApiSurface) {
   parent: apim
   name: 'orders'
   properties: {
@@ -112,24 +119,24 @@ resource ordersApi 'Microsoft.ApiManagement/service/apis@2024-05-01' = {
     path: 'sales'
     protocols: ['https']
     format: 'openapi'
-    value: loadTextContent('../openapi/orders.yaml')
+    value: loadTextContent('../apiops/apim-artifacts/apis/orders/specification.yaml')
     serviceUrl: functionBaseUrl
     subscriptionRequired: true
   }
 }
 
-resource ordersApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2024-05-01' = {
+resource ordersApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2024-05-01' = if (bicepOwnsApiSurface) {
   parent: ordersApi
   name: 'policy'
   properties: {
     format: 'rawxml'
-    value: loadTextContent('policies/api-orders.xml')
+    value: loadTextContent('../apiops/apim-artifacts/apis/orders/policy.xml')
   }
   dependsOn: [ordersBackend, namedValues]
 }
 
 // v2 breaks one contract: list-orders returns a page envelope. Same path, identifier in the URL: /sales/v2/orders.
-resource ordersApiV2 'Microsoft.ApiManagement/service/apis@2024-05-01' = {
+resource ordersApiV2 'Microsoft.ApiManagement/service/apis@2024-05-01' = if (bicepOwnsApiSurface) {
   parent: apim
   name: 'orders-v2'
   properties: {
@@ -140,7 +147,7 @@ resource ordersApiV2 'Microsoft.ApiManagement/service/apis@2024-05-01' = {
     path: 'sales'
     protocols: ['https']
     format: 'openapi'
-    value: loadTextContent('../openapi/orders-v2.yaml')
+    value: loadTextContent('../apiops/apim-artifacts/apis/orders-v2/specification.yaml')
     serviceUrl: functionBaseUrl
     subscriptionRequired: true
   }
@@ -149,12 +156,12 @@ resource ordersApiV2 'Microsoft.ApiManagement/service/apis@2024-05-01' = {
 }
 
 // Same token check, backend and limits as the Original: a new version shouldn't be a way around Part 3.
-resource ordersApiV2Policy 'Microsoft.ApiManagement/service/apis/policies@2024-05-01' = {
+resource ordersApiV2Policy 'Microsoft.ApiManagement/service/apis/policies@2024-05-01' = if (bicepOwnsApiSurface) {
   parent: ordersApiV2
   name: 'policy'
   properties: {
     format: 'rawxml'
-    value: loadTextContent('policies/api-orders.xml')
+    value: loadTextContent('../apiops/apim-artifacts/apis/orders-v2/policy.xml')
   }
   dependsOn: [ordersBackend, namedValues]
 }
@@ -164,16 +171,17 @@ resource listOrdersV2 'Microsoft.ApiManagement/service/apis/operations@2024-05-0
   name: 'list-orders'
 }
 
-resource listOrdersV2Policy 'Microsoft.ApiManagement/service/apis/operations/policies@2024-05-01' = {
+resource listOrdersV2Policy 'Microsoft.ApiManagement/service/apis/operations/policies@2024-05-01' = if (bicepOwnsApiSurface) {
   parent: listOrdersV2
   name: 'policy'
   properties: {
     format: 'rawxml'
-    value: loadTextContent('policies/operation-list-orders-v2.xml')
+    value: loadTextContent('../apiops/apim-artifacts/apis/orders-v2/operations/list-orders/policy.xml')
   }
 }
 
-// One file per scope under infra/policies. Each narrower scope pulls in the broader one with <base />.
+// The global policy stays with the platform; the narrower scopes live in apiops/apim-artifacts.
+// Each narrower scope pulls in the broader one with <base />.
 resource globalPolicy 'Microsoft.ApiManagement/service/policies@2024-05-01' = {
   parent: apim
   name: 'policy'
@@ -190,12 +198,12 @@ resource getOrder 'Microsoft.ApiManagement/service/apis/operations@2024-05-01' e
 }
 
 // cache-lookup uses the built-in cache, which Consumption doesn't have (BasicV2 does).
-resource getOrderPolicy 'Microsoft.ApiManagement/service/apis/operations/policies@2024-05-01' = {
+resource getOrderPolicy 'Microsoft.ApiManagement/service/apis/operations/policies@2024-05-01' = if (bicepOwnsApiSurface) {
   parent: getOrder
   name: 'policy'
   properties: {
     format: 'rawxml'
-    value: loadTextContent('policies/operation-get-order.xml')
+    value: loadTextContent('../apiops/apim-artifacts/apis/orders/operations/get-order/policy.xml')
   }
 }
 
@@ -213,8 +221,14 @@ resource appInsightsLogger 'Microsoft.ApiManagement/service/loggers@2024-05-01' 
 
 // 100% sampling so every cold call shows up: the request row carries the gateway's total time,
 // the dependency row the backend call, and the difference is what the gateway itself spent.
+// Diagnostics stay Bicep-owned in both modes, so they hang off a reference by name, not the conditional API.
+resource ordersApiByName 'Microsoft.ApiManagement/service/apis@2024-05-01' existing = {
+  parent: apim
+  name: 'orders'
+}
+
 resource ordersApiDiagnostics 'Microsoft.ApiManagement/service/apis/diagnostics@2024-05-01' = {
-  parent: ordersApi
+  parent: ordersApiByName
   name: 'applicationinsights'
   properties: {
     loggerId: appInsightsLogger.id
@@ -226,10 +240,11 @@ resource ordersApiDiagnostics 'Microsoft.ApiManagement/service/apis/diagnostics@
       percentage: 100
     }
   }
+  dependsOn: [ordersApi]
 }
 
 // Partners: approval required, so a portal sign-up waits in `submitted` until someone approves it.
-resource partnerProduct 'Microsoft.ApiManagement/service/products@2024-05-01' = {
+resource partnerProduct 'Microsoft.ApiManagement/service/products@2024-05-01' = if (bicepOwnsApiSurface) {
   parent: apim
   name: 'orders-partners'
   properties: {
@@ -241,17 +256,17 @@ resource partnerProduct 'Microsoft.ApiManagement/service/products@2024-05-01' = 
   }
 }
 
-resource partnerProductPolicy 'Microsoft.ApiManagement/service/products/policies@2024-05-01' = {
+resource partnerProductPolicy 'Microsoft.ApiManagement/service/products/policies@2024-05-01' = if (bicepOwnsApiSurface) {
   parent: partnerProduct
   name: 'policy'
   properties: {
     format: 'rawxml'
-    value: loadTextContent('policies/product-orders-partners.xml')
+    value: loadTextContent('../apiops/apim-artifacts/products/orders-partners/policy.xml')
   }
 }
 
 // Evaluation: auto-approved, one subscription per user account, low limits.
-resource freeProduct 'Microsoft.ApiManagement/service/products@2024-05-01' = {
+resource freeProduct 'Microsoft.ApiManagement/service/products@2024-05-01' = if (bicepOwnsApiSurface) {
   parent: apim
   name: 'orders-free'
   properties: {
@@ -264,24 +279,24 @@ resource freeProduct 'Microsoft.ApiManagement/service/products@2024-05-01' = {
   }
 }
 
-resource freeProductPolicy 'Microsoft.ApiManagement/service/products/policies@2024-05-01' = {
+resource freeProductPolicy 'Microsoft.ApiManagement/service/products/policies@2024-05-01' = if (bicepOwnsApiSurface) {
   parent: freeProduct
   name: 'policy'
   properties: {
     format: 'rawxml'
-    value: loadTextContent('policies/product-orders-free.xml')
+    value: loadTextContent('../apiops/apim-artifacts/products/orders-free/policy.xml')
   }
 }
 
 // Every version is its own API, so each one goes into each product.
 var orderApiVersions = [ordersApi.name, ordersApiV2.name]
 
-resource partnerProductApis 'Microsoft.ApiManagement/service/products/apis@2024-05-01' = [for api in orderApiVersions: {
+resource partnerProductApis 'Microsoft.ApiManagement/service/products/apis@2024-05-01' = [for api in orderApiVersions: if (bicepOwnsApiSurface) {
   parent: partnerProduct
   name: api
 }]
 
-resource freeProductApis 'Microsoft.ApiManagement/service/products/apis@2024-05-01' = [for api in orderApiVersions: {
+resource freeProductApis 'Microsoft.ApiManagement/service/products/apis@2024-05-01' = [for api in orderApiVersions: if (bicepOwnsApiSurface) {
   parent: freeProduct
   name: api
 }]
@@ -296,12 +311,12 @@ resource partnersGroup 'Microsoft.ApiManagement/service/groups@2024-05-01' = {
 }
 
 // Visibility in the portal: signed-in developers see the free product, members of `partners` the partner one.
-resource freeProductDevelopers 'Microsoft.ApiManagement/service/products/groups@2024-05-01' = {
+resource freeProductDevelopers 'Microsoft.ApiManagement/service/products/groups@2024-05-01' = if (bicepOwnsApiSurface) {
   parent: freeProduct
   name: 'developers'
 }
 
-resource partnerProductPartners 'Microsoft.ApiManagement/service/products/groups@2024-05-01' = {
+resource partnerProductPartners 'Microsoft.ApiManagement/service/products/groups@2024-05-01' = if (bicepOwnsApiSurface) {
   parent: partnerProduct
   name: partnersGroup.name
 }

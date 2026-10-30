@@ -1,0 +1,9 @@
+{
+  "properties": {
+    "displayName": "Orders API",
+    "apiVersionSetId": "/apiVersionSets/orders",
+    "path": "sales",
+    "protocols": ["https"],
+    "subscriptionRequired": true
+  }
+}

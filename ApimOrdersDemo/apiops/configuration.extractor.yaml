@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/apiops-cli/main/schemas/v1/extractor-config.schema.json
+# The API surface this repo owns. An omitted key means "extract everything of that type",
+# so every Bicep-owned type is set to [] explicitly.
+apis:
+  - orders:
+      diagnostics: []
+  - orders-v2:
+      diagnostics: []
+versionSets:
+  - orders
+products:
+  - orders-free
+  - orders-partners
+backends: []
+namedValues: []
+loggers: []
+diagnostics: []
+groups: []
+subscriptions: []
+policies: []
+tags: []
+policyFragments: []
+gateways: []
+schemas: []
+policyRestrictions: []
+documentations: []
+workspaces: []

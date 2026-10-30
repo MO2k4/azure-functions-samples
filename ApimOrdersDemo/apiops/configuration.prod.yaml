@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/apiops-cli/main/schemas/v1/override-config.schema.json
+products:
+  - name: orders-partners
+    properties:
+      subscriptionsLimit: 1

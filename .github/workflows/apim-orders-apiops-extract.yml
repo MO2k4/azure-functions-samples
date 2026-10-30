@@ -1,7 +1,7 @@
 name: ApimOrdersDemo APIOps extract
 
 # Pulls the API surface from a live instance and opens a PR, so portal edits land in review instead of being lost.
-# Nightly runs extract from dev, the environment the artifacts describe; prod is extracted on demand.
+# Nightly runs extract dev and prod, each into its own PR; a manual run extracts the chosen instance.
 on:
   schedule:
     - cron: '17 3 * * *'
@@ -13,11 +13,6 @@ on:
         options: [dev, prod]
         default: dev
 
-# One run per environment at a time: both would push to the same PR branch.
-concurrency:
-  group: apiops-extract-${{ inputs.environment || 'dev' }}
-  cancel-in-progress: false
-
 permissions:
   id-token: write
   contents: write
@@ -28,8 +23,20 @@ env:
 
 jobs:
   extract:
+    # A scheduled run has no inputs, so it extracts both instances.
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: ${{ fromJSON(inputs.environment && format('["{0}"]', inputs.environment) || '["dev", "prod"]') }}
+
+    # One run per environment at a time: both would push to the same PR branch.
+    concurrency:
+      group: apiops-extract-${{ matrix.environment }}
+      cancel-in-progress: false
+
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment || 'dev' }}
+    # prod has required reviewers for publish; extract only reads, so it uses prod-read without them.
+    environment: ${{ matrix.environment == 'prod' && 'prod-read' || matrix.environment }}
     defaults:
       run:
         working-directory: ApimOrdersDemo/apiops
@@ -59,8 +66,8 @@ jobs:
       - uses: peter-evans/create-pull-request@v7
         with:
           add-paths: ApimOrdersDemo/apiops/apim-artifacts
-          branch: apiops-extract/${{ inputs.environment || 'dev' }}
-          commit-message: "ApimOrdersDemo: extract API surface from ${{ inputs.environment || 'dev' }}"
-          title: "APIOps extract from ${{ inputs.environment || 'dev' }}"
+          branch: apiops-extract/${{ matrix.environment }}
+          commit-message: "ApimOrdersDemo: extract API surface from ${{ matrix.environment }}"
+          title: "APIOps extract from ${{ matrix.environment }}"
           body: Changes made on the instance outside Git. Review them like any other API change before merging.
           labels: extract

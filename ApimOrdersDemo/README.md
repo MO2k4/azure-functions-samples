@@ -215,12 +215,14 @@ npx @azure-tools/apiops-cli@1.0.5 publish --resource-group <rg> --service-name <
 
 **Workflows** (repository root, `.github/workflows/`):
 
-- `apim-orders-apiops-extract.yml`: nightly against `dev` as a drift detector, or manually against `dev` or `prod`; opens a PR with the changes. No diff, no PR. While a drift PR is open, later runs update the same branch and PR (`apiops-extract/<env>`) instead of opening another one, and a run whose extract matches `main` again closes it.
+- `apim-orders-apiops-extract.yml`: nightly against `dev` and `prod` as a drift detector (one matrix job per environment), or manually against the one you pick; opens a PR per environment with the changes. No diff, no PR. While a drift PR is open, later runs update the same branch and PR (`apiops-extract/<env>`) instead of opening another one, and a run whose extract matches `main` again closes it.
 - `apim-orders-apiops-publish.yml`: dry run against `dev` on every PR that touches `ApimOrdersDemo/apiops/`; on merge to `main` it publishes the merged commit's changes to `dev`, then to `prod` after an approval on the `prod` environment.
 
 A PR opened with the default `GITHUB_TOKEN` doesn't start other workflows, so the extract PR gets no dry-run check until someone pushes to it. The next extract run rebuilds that branch from `main` and force-pushes it, so a commit pushed by hand doesn't survive the night. Use a GitHub App token in `create-pull-request` if you want the check to run on its own.
 
-**Identity.** The workflows sign in with OIDC through a user-assigned managed identity, which needs no app registration (the tenant this sample was built in doesn't allow those). Per environment, in GitHub: a `dev` and a `prod` environment (`prod` with required reviewers) with the variables `AZURE_CLIENT_ID` (the identity's client ID), `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `APIM_RESOURCE_GROUP`, `APIM_SERVICE_NAME`. In Azure (not run for this sample):
+The prod PR is never clean. The artifacts describe dev, and `extract` (CLI 1.0.5) has no `--overrides` option: it writes whatever the instance returns and doesn't read `configuration.prod.yaml`, so it can neither apply nor strip an override. Every prod extract therefore shows `"subscriptionsLimit": 1` in `products/orders-partners/productInformation.json`, and, once a live dev extract has been committed, the values that name the instance (the full `apiVersionSetId` resource ID, `serviceUrl`). None of that is drift. Leave the prod PR open as a standing report that each night updates, never merge it, and move any other line it shows into a branch of its own. Closing it only gets it reopened the next night.
+
+**Identity.** The workflows sign in with OIDC through a user-assigned managed identity, which needs no app registration (the tenant this sample was built in doesn't allow those). Per environment, in GitHub: a `dev`, a `prod` (with required reviewers) and a `prod-read` environment with the variables `AZURE_CLIENT_ID` (the identity's client ID), `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `APIM_RESOURCE_GROUP`, `APIM_SERVICE_NAME`. In Azure (not run for this sample):
 
 ```bash
 az identity create -g <rg> -n id-apiops-orders
@@ -231,7 +233,7 @@ az role assignment create --assignee-object-id <identity principalId> --assignee
   --role "API Management Service Contributor" --scope <APIM resource ID>
 ```
 
-Repeat the federated credential for `environment:prod`. Learn recommends a read-only identity for extract and a separate one for publish; this sample uses one per environment to stay short.
+Repeat the federated credential for `environment:prod`. The extract job uses `prod-read` for prod because required reviewers also apply to a job that only reads, and a nightly run would wait for an approval every night. Give `prod-read` its own identity with **Reader** on the prod instance (federated subject `environment:prod-read`), as Learn recommends for extract; dev uses one identity for both to stay short.
 
 ## Rename the key header
 

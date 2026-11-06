@@ -35,19 +35,20 @@ jobs:
       cancel-in-progress: false
 
     runs-on: ubuntu-latest
-    # prod has required reviewers for publish; extract only reads, so it uses prod-read without them.
+    # prod has required reviewers for publish; extract only reads, so it uses prod-read without them
+    # and signs in with the Reader identity the PR dry run uses.
     environment: ${{ matrix.environment == 'prod' && 'prod-read' || matrix.environment }}
     defaults:
       run:
         working-directory: ApimOrdersDemo/apiops
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
 
-      - uses: azure/login@v2
+      - uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
@@ -56,8 +57,8 @@ jobs:
       - run: >
           npx --yes "$APIOPS_CLI" extract
           --subscription-id ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          --resource-group ${{ vars.APIM_RESOURCE_GROUP }}
-          --service-name ${{ vars.APIM_SERVICE_NAME }}
+          --resource-group ${{ matrix.environment == 'prod' && vars.APIM_PROD_RESOURCE_GROUP || vars.APIM_DEV_RESOURCE_GROUP }}
+          --service-name ${{ matrix.environment == 'prod' && vars.APIM_PROD_SERVICE_NAME || vars.APIM_DEV_SERVICE_NAME }}
           --filter configuration.extractor.yaml
           --no-transitive
           --remove-stale

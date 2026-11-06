@@ -216,24 +216,37 @@ npx @azure-tools/apiops-cli@1.0.5 publish --resource-group <rg> --service-name <
 **Workflows** (repository root, `.github/workflows/`):
 
 - `apim-orders-apiops-extract.yml`: nightly against `dev` and `prod` as a drift detector (one matrix job per environment), or manually against the one you pick; opens a PR per environment with the changes. No diff, no PR. While a drift PR is open, later runs update the same branch and PR (`apiops-extract/<env>`) instead of opening another one, and a run whose extract matches `main` again closes it.
-- `apim-orders-apiops-publish.yml`: dry run against `dev` on every PR that touches `ApimOrdersDemo/apiops/`; on merge to `main` it publishes the merged commit's changes to `dev`, then to `prod` after an approval on the `prod` environment.
+- `apim-orders-apiops-publish.yml` (Part 6): on every PR, a `changes` job checks whether `ApimOrdersDemo/apiops/` changed, and only then `dry-run` plans the change against `dev` and against `prod` with `configuration.prod.yaml`. Make `dry-run` a required status check: the workflow has no `paths` filter on `pull_request`, so PRs that don't touch `apiops/` get a skipped `dry-run`, which counts as passed. On merge to `main`, `publish-dev` publishes the merged commit's changes to `dev`, and `publish-prod` publishes them to `prod` after an approval on the `prod` environment. A manual run (`workflow_dispatch`) publishes the full tree to both, without `--commit-id`, to catch up after a rejected or cancelled prod run. PRs from forks get no OIDC token, so their `dry-run` fails; push the branch to this repo and let it run there.
 
 A PR opened with the default `GITHUB_TOKEN` doesn't start other workflows, so the extract PR gets no dry-run check until someone pushes to it. The next extract run rebuilds that branch from `main` and force-pushes it, so a commit pushed by hand doesn't survive the night. Use a GitHub App token in `create-pull-request` if you want the check to run on its own.
 
 The prod PR is never clean. The artifacts describe dev, and `extract` (CLI 1.0.5) has no `--overrides` option: it writes whatever the instance returns and doesn't read `configuration.prod.yaml`, so it can neither apply nor strip an override. Every prod extract therefore shows `"subscriptionsLimit": 1` in `products/orders-partners/productInformation.json`, and, once a live dev extract has been committed, the values that name the instance (the full `apiVersionSetId` resource ID, `serviceUrl`). None of that is drift. Leave the prod PR open as a standing report that each night updates, never merge it, and move any other line it shows into a branch of its own. Closing it only gets it reopened the next night.
 
-**Identity.** The workflows sign in with OIDC through a user-assigned managed identity, which needs no app registration (the tenant this sample was built in doesn't allow those). Per environment, in GitHub: a `dev`, a `prod` (with required reviewers) and a `prod-read` environment with the variables `AZURE_CLIENT_ID` (the identity's client ID), `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `APIM_RESOURCE_GROUP`, `APIM_SERVICE_NAME`. In Azure (not run for this sample):
+**Identity.** The workflows sign in with OIDC through user-assigned managed identities, which need no app registration (the tenant this sample was built in doesn't allow those). Three identities, each trusted for exactly one token subject (not run for this sample):
+
+| Identity | Role (scope: the APIM instance) | Federated subject | Used by |
+|---|---|---|---|
+| `id-apiops-plan` | Reader on dev and prod | `repo:<owner>/<repo>:pull_request`, `repo:<owner>/<repo>:environment:prod-read` | PR dry run, nightly prod extract |
+| `id-apiops-dev` | API Management Service Contributor on dev | `repo:<owner>/<repo>:environment:dev` | publish to dev, nightly dev extract |
+| `id-apiops-prod` | API Management Service Contributor on prod | `repo:<owner>/<repo>:environment:prod` | publish to prod |
+
+A job that names an environment gets the `environment:<name>` subject, even on `main`, so a branch subject (`ref:refs/heads/main`) never matches these jobs. Subjects must match exactly (no wildcards).
 
 ```bash
-az identity create -g <rg> -n id-apiops-orders
-az identity federated-credential create -g <rg> --identity-name id-apiops-orders -n github-dev \
+az identity create -g <rg> -n id-apiops-dev
+az identity federated-credential create -g <rg> --identity-name id-apiops-dev -n github-dev \
   --issuer https://token.actions.githubusercontent.com \
   --subject repo:<owner>/<repo>:environment:dev --audiences api://AzureADTokenExchange
 az role assignment create --assignee-object-id <identity principalId> --assignee-principal-type ServicePrincipal \
   --role "API Management Service Contributor" --scope <APIM resource ID>
 ```
 
-Repeat the federated credential for `environment:prod`. The extract job uses `prod-read` for prod because required reviewers also apply to a job that only reads, and a nightly run would wait for an approval every night. Give `prod-read` its own identity with **Reader** on the prod instance (federated subject `environment:prod-read`), as Learn recommends for extract; dev uses one identity for both to stay short.
+Repeat for the other two (Reader for `id-apiops-plan`, on both instances). Create one federated credential at a time per identity; concurrent creation on the same identity fails with 409.
+
+In GitHub:
+
+- Repository variables: `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `APIOPS_PLAN_CLIENT_ID` (client ID of `id-apiops-plan`), `APIM_DEV_RESOURCE_GROUP`, `APIM_DEV_SERVICE_NAME`, `APIM_PROD_RESOURCE_GROUP`, `APIM_PROD_SERVICE_NAME`. The dry run names no environment, so it only sees repository variables.
+- Environments, each with one variable, `AZURE_CLIENT_ID`: `dev` (`id-apiops-dev`), `prod` (`id-apiops-prod`, required reviewers), `prod-read` (`id-apiops-plan`, no reviewers). Restrict `dev` and `prod` to the `main` branch. The extract job uses `prod-read` for prod because required reviewers also apply to a job that only reads, and a nightly run would wait for an approval every night.
 
 ## Rename the key header
 

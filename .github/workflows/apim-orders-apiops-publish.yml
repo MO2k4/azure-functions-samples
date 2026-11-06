@@ -38,8 +38,44 @@ jobs:
             echo "apiops=true" >> "$GITHUB_OUTPUT"
           fi
 
-  # The required check. No environment, so the token subject is pull_request and the identity only has
-  # Reader. With dev and prod limited to the main branch, a PR that edits this file can't publish before review.
+  # Required check, next to dry-run. Needs no Azure: no id-token, no environment, no variables.
+  validate:
+    needs: changes
+    if: needs.changes.outputs.apiops == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ApimOrdersDemo/apiops
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Lint the OpenAPI specs
+        run: npx --yes @stoplight/spectral-cli@6.17.1 lint --ruleset .spectral.yaml 'apim-artifacts/apis/*/specification.yaml'
+
+      - name: Check the policies
+        run: node ../scripts/check-policies.mjs apim-artifacts
+
+      # A spec the base branch doesn't have is a new API or version: nothing to break.
+      - name: Breaking changes against the base branch
+        run: |
+          for spec in apim-artifacts/apis/*/specification.yaml; do
+            if ! git cat-file -e "HEAD~1:./$spec" 2>/dev/null; then
+              echo "$spec: new, skipped"
+              continue
+            fi
+            git show "HEAD~1:./$spec" > "$RUNNER_TEMP/base.yaml"
+            docker run --rm -v "$PWD:/head:ro" -v "$RUNNER_TEMP:/base:ro" tufin/oasdiff:v1.35.0 \
+              breaking /base/base.yaml "/head/$spec" --fail-on ERR
+          done
+
+  # Required check, next to validate. No environment, so the token subject is pull_request and the identity
+  # has only Reader. With dev and prod limited to main, a PR that edits this file can't publish before review.
   dry-run:
     needs: changes
     if: needs.changes.outputs.apiops == 'true'

@@ -17,6 +17,7 @@ ApimOrdersDemo/
   apiops/                APIOps (Part 5): the API surface as artifacts (specs, API/operation/product policies), extract filter, prod overrides
   requests.http          401 without a key, 200 with one, header vs query, v2, the portal's preflight
   scripts/verify.sh      Part 3 and 4 checks against a deployment: token, audience, direct calls, ip-filter, versions, CORS, products
+  scripts/check-policies.mjs  Part 6 PR check: policy files well-formed (expressions blanked), <base /> per section, the two API copies identical
 ```
 
 ## Deploy
@@ -216,7 +217,7 @@ npx @azure-tools/apiops-cli@1.0.5 publish --resource-group <rg> --service-name <
 **Workflows** (repository root, `.github/workflows/`):
 
 - `apim-orders-apiops-extract.yml`: nightly against `dev` and `prod` as a drift detector (one matrix job per environment), or manually against the one you pick; opens a PR per environment with the changes. No diff, no PR. While a drift PR is open, later runs update the same branch and PR (`apiops-extract/<env>`) instead of opening another one, and a run whose extract matches `main` again closes it.
-- `apim-orders-apiops-publish.yml` (Part 6): on every PR, a `changes` job checks whether `ApimOrdersDemo/apiops/` changed, and only then `dry-run` plans the change against `dev` and against `prod` with `configuration.prod.yaml`. Make `dry-run` a required status check: the workflow has no `paths` filter on `pull_request`, so PRs that don't touch `apiops/` get a skipped `dry-run`, which counts as passed. On merge to `main`, `publish-dev` publishes the merged commit's changes to `dev`, and `publish-prod` publishes them to `prod` after an approval on the `prod` environment. A manual run (`workflow_dispatch`) publishes the full tree to both, without `--commit-id`, to catch up after a rejected or cancelled prod run. PRs from forks get no OIDC token, so their `dry-run` fails; push the branch to this repo and let it run there.
+- `apim-orders-apiops-publish.yml` (Part 6): on every PR, a `changes` job checks whether `ApimOrdersDemo/apiops/` changed, and only then two jobs run. `validate` needs no Azure: Spectral lints the specs with `apiops/.spectral.yaml`, `scripts/check-policies.mjs` checks every policy file (well-formed once expressions are blanked, `<base />` in all four sections, the two order API policies identical), and oasdiff fails on a breaking change to a spec that exists on the base branch (a new version folder is skipped). `dry-run` plans the change against `dev` and against `prod` with `configuration.prod.yaml`. Make both required status checks (a branch ruleset on `main`: "Require status checks to pass" with `validate` and `dry-run`, plus "Require a pull request before merging"). The workflow has no `paths` filter on `pull_request`, so PRs that don't touch `apiops/` get skipped jobs, which count as passed. On merge to `main`, `publish-dev` publishes the merged commit's changes to `dev`, and `publish-prod` publishes them to `prod` after an approval on the `prod` environment. A manual run (`workflow_dispatch`) publishes the full tree to both, without `--commit-id`, to catch up after a rejected or cancelled prod run. PRs from forks get no OIDC token, so their `dry-run` fails; push the branch to this repo and let it run there.
 
 A PR opened with the default `GITHUB_TOKEN` doesn't start other workflows, so the extract PR gets no dry-run check until someone pushes to it. The next extract run rebuilds that branch from `main` and force-pushes it, so a commit pushed by hand doesn't survive the night. Use a GitHub App token in `create-pull-request` if you want the check to run on its own.
 
@@ -246,7 +247,7 @@ Repeat for the other two (Reader for `id-apiops-plan`, on both instances). Creat
 In GitHub:
 
 - Repository variables: `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `APIOPS_PLAN_CLIENT_ID` (client ID of `id-apiops-plan`), `APIM_DEV_RESOURCE_GROUP`, `APIM_DEV_SERVICE_NAME`, `APIM_PROD_RESOURCE_GROUP`, `APIM_PROD_SERVICE_NAME`. The dry run names no environment, so it only sees repository variables.
-- Environments, each with one variable, `AZURE_CLIENT_ID`: `dev` (`id-apiops-dev`), `prod` (`id-apiops-prod`, required reviewers), `prod-read` (`id-apiops-plan`, no reviewers). Restrict `dev` and `prod` to the `main` branch. The extract job uses `prod-read` for prod because required reviewers also apply to a job that only reads, and a nightly run would wait for an approval every night.
+- Environments, each with one variable, `AZURE_CLIENT_ID`: `dev` (`id-apiops-dev`), `prod` (`id-apiops-prod`, required reviewers), `prod-read` (`id-apiops-plan`, no reviewers). Restrict `dev` and `prod` to the `main` branch. On a team, also turn on "Prevent self-review" for `prod`, so whoever merged can't approve their own prod run; this sample leaves it off because a single maintainer would then have to bypass the rule on every run. The extract job uses `prod-read` for prod because required reviewers also apply to a job that only reads, and a nightly run would wait for an approval every night.
 
 ## Rename the key header
 

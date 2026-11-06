@@ -1,0 +1,7 @@
+extends: [[spectral:oas, recommended]]
+rules:
+  # API Management names each operation after its operationId, and operations/<name>/policy.xml hangs off
+  # that name. Without one, the import generates a name from method and path.
+  operation-operationId: error
+  # Partners find the contact in the developer portal, not in the spec.
+  info-contact: off

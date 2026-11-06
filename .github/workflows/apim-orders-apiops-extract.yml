@@ -64,7 +64,7 @@ jobs:
           --remove-stale
           --output apim-artifacts
 
-      - uses: peter-evans/create-pull-request@v7
+      - uses: peter-evans/create-pull-request@v8
         with:
           add-paths: ApimOrdersDemo/apiops/apim-artifacts
           branch: apiops-extract/${{ matrix.environment }}

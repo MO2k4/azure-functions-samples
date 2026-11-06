@@ -25,23 +25,24 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       apiops: ${{ steps.diff.outputs.apiops }}
+      validate: ${{ steps.diff.outputs.validate }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
+      # A change to the policy script alone runs validate against the unchanged artifacts. It plans
+      # nothing, so dry-run stays skipped.
       - id: diff
         run: |
-          if git diff --quiet HEAD~1 HEAD -- ApimOrdersDemo/apiops; then
-            echo "apiops=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "apiops=true" >> "$GITHUB_OUTPUT"
-          fi
+          changed() { if git diff --quiet HEAD~1 HEAD -- "$@"; then echo false; else echo true; fi; }
+          echo "apiops=$(changed ApimOrdersDemo/apiops)" >> "$GITHUB_OUTPUT"
+          echo "validate=$(changed ApimOrdersDemo/apiops ApimOrdersDemo/scripts/check-policies.mjs)" >> "$GITHUB_OUTPUT"
 
   # Required check, next to dry-run. Needs no Azure: no id-token, no environment, no variables.
   validate:
     needs: changes
-    if: needs.changes.outputs.apiops == 'true'
+    if: needs.changes.outputs.validate == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:

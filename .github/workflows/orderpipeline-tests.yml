@@ -1,0 +1,38 @@
+name: OrderPipelineDemo tests
+
+on:
+  push:
+    paths:
+      - 'OrderPipelineDemo/**'
+      - 'OrderPipelineDemo.Tests/**'
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
+      - 'global.json'
+      - '.github/workflows/orderpipeline-tests.yml'
+  pull_request:
+    paths:
+      - 'OrderPipelineDemo/**'
+      - 'OrderPipelineDemo.Tests/**'
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
+      - 'global.json'
+      - '.github/workflows/orderpipeline-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      # Without Core Tools the two func start round-trip tests skip instead of running.
+      - run: npm install -g azure-functions-core-tools@4 --unsafe-perm true
+
+      - run: dotnet test --project OrderPipelineDemo.Tests

@@ -11,7 +11,7 @@ AspireDemo/
 ├── AspireDemo.slnx                # includes the two Functions projects + Core via relative path
 ├── README.md
 ├── AspireDemo.AppHost/
-│   ├── AspireDemo.AppHost.csproj  # Sdk="Aspire.AppHost.Sdk/13.3.5"; Functions + ServiceBus + Storage + Redis hosting refs
+│   ├── AspireDemo.AppHost.csproj  # Sdk="Aspire.AppHost.Sdk/13.6.5"; Functions + ServiceBus + Storage + Redis hosting refs
 │   ├── AppHost.cs                 # host storage + app-storage + Service Bus + Redis + three AddAzureFunctionsProject calls
 │   ├── Properties/launchSettings.json
 │   ├── appsettings.json
@@ -74,7 +74,7 @@ The console prints `Dashboard: https://localhost:<port>/login?t=<token>`. Open i
 
 - .NET 10 SDK (`global.json` pins 10.0.201, rolls forward to latest patch).
 - Docker Desktop (or an equivalent container runtime). Part 2 adds the Service Bus emulator and its SQL Server backing container; both are amd64-only, so on Apple Silicon enable Rosetta-based emulation in your container runtime.
-- Aspire templates: `dotnet new install Aspire.ProjectTemplates@13.3.5` (only needed if you want to regenerate AppHost projects locally; not required to run this sample).
+- Aspire templates: `dotnet new install Aspire.ProjectTemplates@13.6.5` (only needed if you want to regenerate AppHost projects locally; not required to run this sample).
 
 ## Articles
 

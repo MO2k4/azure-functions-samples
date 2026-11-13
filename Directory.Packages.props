@@ -28,6 +28,10 @@
     <PackageVersion Include="Azure.Messaging.EventHubs" Version="5.12.2" />
   </ItemGroup>
   <ItemGroup>
+    <!-- OrderPipelineDemo -->
+    <PackageVersion Include="Azure.Storage.Blobs" Version="12.30.1" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- Monitoring: HttpTriggerDemo (Classic App Insights) -->
     <!-- Do NOT upgrade WorkerService to 3.x: breaks Functions worker. See github.com/Azure/azure-functions-dotnet-worker/issues/3322 -->
     <PackageVersion Include="Microsoft.ApplicationInsights.WorkerService" Version="2.22.0" />
@@ -58,7 +62,7 @@
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.0" />
-    <PackageVersion Include="Azure.Storage.Queues" Version="12.20.1" />
+    <PackageVersion Include="Azure.Storage.Queues" Version="12.28.1" />
     <PackageVersion Include="Azure.Identity" Version="1.21.0" />
     <PackageVersion Include="Microsoft.Extensions.Azure" Version="1.14.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />

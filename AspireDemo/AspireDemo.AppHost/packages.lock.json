@@ -636,15 +636,6 @@
           "Azure.Core": "1.54.0"
         }
       },
-      "Azure.Storage.Blobs": {
-        "type": "Transitive",
-        "resolved": "12.29.2",
-        "contentHash": "NeZmk7bphspT2BYn8XaNCTV4/9vQG+ea79F85MBTi2o2WiXIIJNsRBtFyeBrzK2HIk476rfSqLNwPt4vXgOEkQ==",
-        "dependencies": {
-          "Azure.Core": "1.55.0",
-          "Azure.Storage.Common": "12.28.0"
-        }
-      },
       "Azure.Storage.Common": {
         "type": "Transitive",
         "resolved": "12.28.0",
@@ -1259,9 +1250,19 @@
           "Azure.Core": "1.53.0"
         }
       },
+      "Azure.Storage.Blobs": {
+        "type": "CentralTransitive",
+        "requested": "[12.30.1, )",
+        "resolved": "12.29.2",
+        "contentHash": "NeZmk7bphspT2BYn8XaNCTV4/9vQG+ea79F85MBTi2o2WiXIIJNsRBtFyeBrzK2HIk476rfSqLNwPt4vXgOEkQ==",
+        "dependencies": {
+          "Azure.Core": "1.55.0",
+          "Azure.Storage.Common": "12.28.0"
+        }
+      },
       "Azure.Storage.Queues": {
         "type": "CentralTransitive",
-        "requested": "[12.20.1, )",
+        "requested": "[12.28.1, )",
         "resolved": "12.27.1",
         "contentHash": "uQgZ9bzwVJ8bqsWywzwkRt1lfusYPXJAPSb9yVlTsSmZtH+bnDb/RfQuHiuUmk3nlQbCOUGFdD0cRXn8uMiOHg==",
         "dependencies": {

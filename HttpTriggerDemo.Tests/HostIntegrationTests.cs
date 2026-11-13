@@ -4,11 +4,11 @@ using NSubstitute;
 
 namespace HttpTriggerDemo.Tests;
 
-public class HostIntegrationTests : IAsyncLifetime
+public sealed class HostIntegrationTests : IAsyncLifetime
 {
     private IHost _host = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _host = new HostBuilder()
             .ConfigureFunctionsWebApplication()
@@ -38,5 +38,5 @@ public class HostIntegrationTests : IAsyncLifetime
         Assert.NotNull(service);
     }
 
-    public async Task DisposeAsync() => await _host.StopAsync();
+    public async ValueTask DisposeAsync() => await _host.StopAsync();
 }

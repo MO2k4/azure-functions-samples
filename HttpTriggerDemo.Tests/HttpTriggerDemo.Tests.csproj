@@ -2,8 +2,11 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <OutputType>Exe</OutputType>
     <!-- Test method names use underscores by convention (MethodName_Condition_Expected) -->
-    <NoWarn>$(NoWarn);CA1707</NoWarn>
+    <!-- xUnit1051 (pass TestContext.Current.CancellationToken): off so these tests stay identical
+         to the code shown in the published articles; new test projects keep it on. -->
+    <NoWarn>$(NoWarn);xUnit1051;CA1707</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
@@ -12,7 +15,7 @@
     <PackageReference Include="Testcontainers" />
     <PackageReference Include="Testcontainers.Azurite" />
     <PackageReference Include="Azure.Data.Tables" />
-    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>

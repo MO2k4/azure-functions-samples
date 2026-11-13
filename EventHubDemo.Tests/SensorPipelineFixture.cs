@@ -14,14 +14,12 @@ public sealed class SensorPipelineFixture : IAsyncLifetime
 
     // AzureWebJobsStorage for the Functions host (separate from the EventHubs emulator's internal Azurite).
     // Use latest image: Azure Functions Core Tools 4.8 requires Azurite API ≥ 2024-08-04 (available in 3.32+).
-    private readonly AzuriteContainer _azurite = new AzuriteBuilder()
-        .WithImage("mcr.microsoft.com/azure-storage/azurite:latest")
+    private readonly AzuriteContainer _azurite = new AzuriteBuilder("mcr.microsoft.com/azure-storage/azurite:latest")
         .Build();
 
     // Port 8081 is bound to the same host port so the func child process can reach the emulator
     // via localhost:8081 (the self-referential endpoint the Cosmos SDK discovers from the account response).
-    private readonly CosmosDbContainer _cosmos = new CosmosDbBuilder()
-        .WithImage("mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview")
+    private readonly CosmosDbContainer _cosmos = new CosmosDbBuilder("mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview")
         .WithPortBinding(8081, 8081)
         .WithWaitStrategy(Wait.ForUnixContainer()
             .UntilMessageIsLogged("Gateway=OK, Explorer=OK"))
@@ -36,7 +34,7 @@ public sealed class SensorPipelineFixture : IAsyncLifetime
 
     public SensorPipelineFixture()
     {
-        _eventHubs = new EventHubsBuilder()
+        _eventHubs = new EventHubsBuilder("mcr.microsoft.com/azure-messaging/eventhubs-emulator:latest")
             .WithAcceptLicenseAgreement(true)
             .WithConfigurationBuilder(EventHubsServiceConfiguration.Create()
                 .WithEntity("sensor-readings", 2, []))
@@ -45,7 +43,7 @@ public sealed class SensorPipelineFixture : IAsyncLifetime
             .Build();
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         // Start all containers in parallel
         await Task.WhenAll(
@@ -90,6 +88,8 @@ public sealed class SensorPipelineFixture : IAsyncLifetime
             ["CosmosDatabase"] = "SensorData",
             ["CosmosContainer"] = "readings",
             ["FUNCTIONS_WORKER_RUNTIME"] = "dotnet-isolated",
+            // The Azure Monitor exporter throws at startup without a connection string; this one points nowhere.
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=http://localhost:1/",
         };
 
         var startInfo = new ProcessStartInfo("func", "start")
@@ -139,7 +139,7 @@ public sealed class SensorPipelineFixture : IAsyncLifetime
             "Check that 'func' CLI is installed and EventHubDemo builds successfully.");
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         _funcProcess?.Kill(entireProcessTree: true);
         _funcProcess?.Dispose();

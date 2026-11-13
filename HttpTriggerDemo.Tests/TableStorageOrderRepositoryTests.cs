@@ -3,11 +3,11 @@ using Testcontainers.Azurite;
 
 namespace HttpTriggerDemo.Tests;
 
-public class TableStorageOrderRepositoryTests : IAsyncLifetime
+public sealed class TableStorageOrderRepositoryTests : IAsyncLifetime
 {
-    private readonly AzuriteContainer _azurite = new AzuriteBuilder().Build();
+    private readonly AzuriteContainer _azurite = new AzuriteBuilder("mcr.microsoft.com/azure-storage/azurite:3.37.0").Build();
 
-    public async Task InitializeAsync() => await _azurite.StartAsync();
+    public async ValueTask InitializeAsync() => await _azurite.StartAsync();
 
     [Fact]
     public async Task SaveAsync_WithValidOrder_PersistsToTableStorage()
@@ -25,5 +25,5 @@ public class TableStorageOrderRepositoryTests : IAsyncLifetime
         Assert.Equal(3, entity.Value["Quantity"]);
     }
 
-    public async Task DisposeAsync() => await _azurite.DisposeAsync();
+    public async ValueTask DisposeAsync() => await _azurite.DisposeAsync();
 }

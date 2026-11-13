@@ -7,13 +7,13 @@ using Testcontainers.Azurite;
 namespace HttpTriggerDemo.Tests;
 
 #pragma warning disable CA1001 // Type owns disposable fields — cleaned up in DisposeAsync
-public class FunctionsE2ETests : IAsyncLifetime
+public sealed class FunctionsE2ETests : IAsyncLifetime
 {
-    private readonly AzuriteContainer _azurite = new AzuriteBuilder().Build();
+    private readonly AzuriteContainer _azurite = new AzuriteBuilder("mcr.microsoft.com/azure-storage/azurite:3.37.0").Build();
     private Process? _funcProcess;
     private readonly HttpClient _client = new();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _azurite.StartAsync();
 
@@ -76,7 +76,7 @@ public class FunctionsE2ETests : IAsyncLifetime
         throw new TimeoutException($"Port {port} on {host} did not open within {timeout}.");
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         _funcProcess?.Kill(entireProcessTree: true);
         await _azurite.DisposeAsync();

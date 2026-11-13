@@ -5,10 +5,9 @@ using Testcontainers.CosmosDb;
 
 namespace EventHubDemo.Tests;
 
-public class CosmosSensorRepositoryTests : IAsyncLifetime
+public sealed class CosmosSensorRepositoryTests : IAsyncLifetime
 {
-    private readonly CosmosDbContainer _cosmos = new CosmosDbBuilder()
-        .WithImage("mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview")
+    private readonly CosmosDbContainer _cosmos = new CosmosDbBuilder("mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview")
         .WithWaitStrategy(Wait.ForUnixContainer()
             .UntilMessageIsLogged("Gateway=OK, Explorer=OK"))
         .Build();
@@ -16,7 +15,7 @@ public class CosmosSensorRepositoryTests : IAsyncLifetime
     private CosmosClient _client = null!;
     private Container _container = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _cosmos.StartAsync();
 
@@ -61,7 +60,7 @@ public class CosmosSensorRepositoryTests : IAsyncLifetime
         Assert.Equal(60.0, (double)results[0].humidity);
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         _client.Dispose();
         await _cosmos.DisposeAsync();

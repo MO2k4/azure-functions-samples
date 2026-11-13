@@ -18,7 +18,7 @@ public sealed class FunctionAppContainerFixture : IAsyncLifetime
     public HttpClient CreateClient() =>
         new() { BaseAddress = _baseAddress };
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         // Build context must be the solution root so Directory.Build.props and
         // Directory.Packages.props are available to the Dockerfile.
@@ -42,8 +42,7 @@ public sealed class FunctionAppContainerFixture : IAsyncLifetime
                 $"docker build exited with code {buildProcess.ExitCode}. " +
                 "Run: docker build -t httptriggerdemo-test -f HttpTriggerDemo/Dockerfile .");
 
-        _container = new ContainerBuilder()
-            .WithImage(ImageName)
+        _container = new ContainerBuilder(ImageName)
             .WithPortBinding(80, assignRandomHostPort: true)
             .WithWaitStrategy(Wait.ForUnixContainer()
                 .UntilHttpRequestIsSucceeded(r => r.ForPort(80).ForPath("/api/hello")))
@@ -53,7 +52,7 @@ public sealed class FunctionAppContainerFixture : IAsyncLifetime
         _baseAddress = new Uri($"http://localhost:{_container.GetMappedPublicPort(80)}");
     }
 
-    public async Task DisposeAsync() =>
+    public async ValueTask DisposeAsync() =>
         await _container.DisposeAsync().AsTask();
 }
 

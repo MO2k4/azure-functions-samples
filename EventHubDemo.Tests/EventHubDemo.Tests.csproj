@@ -2,9 +2,12 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <OutputType>Exe</OutputType>
     <!-- Test method names use underscores by convention -->
     <!-- CA1001: CosmosClient disposal is handled via IAsyncLifetime.DisposeAsync -->
-    <NoWarn>$(NoWarn);CA1707;CA1001</NoWarn>
+    <!-- xUnit1051 (pass TestContext.Current.CancellationToken): off so these tests stay identical
+         to the code shown in the published articles; new test projects keep it on. -->
+    <NoWarn>$(NoWarn);xUnit1051;CA1707;CA1001</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
@@ -14,7 +17,7 @@
     <PackageReference Include="Testcontainers.CosmosDb" />
     <PackageReference Include="Testcontainers.Azurite" />
     <PackageReference Include="Azure.Messaging.EventHubs" />
-    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
